@@ -1,0 +1,1425 @@
+openapi: 3.0.3
+info:
+  title: Laporan Internal API
+  version: 1.0.0
+servers:
+  - url: /api/v1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Envelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        code:
+          type: integer
+        data:
+          type: object
+          nullable: true
+          additionalProperties: true
+        meta:
+          type: object
+          nullable: true
+          additionalProperties: true
+    Location:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        lat: { type: number, format: double }
+        long: { type: number, format: double }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        deleted_at: { type: string, format: date-time, nullable: true }
+    AssetCategory:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        slug: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        deleted_at: { type: string, format: date-time, nullable: true }
+    ReportCategory:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        slug: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        deleted_at: { type: string, format: date-time, nullable: true }
+    Report:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        category: { type: string, nullable: true }
+        location: { type: string, nullable: true }
+        lat: { type: number, nullable: true }
+        lng: { type: number, nullable: true }
+        accuracy: { type: number, nullable: true }
+        status: { type: string, enum: [draft, submitted, review, revision, approved, rejected] }
+        unit_id: { type: string, format: uuid }
+        created_by: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    Evidence:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        report_id: { type: string, format: uuid }
+        type: { type: string, enum: [photo] }
+        original_name: { type: string }
+        mime: { type: string, enum: [image/jpeg, image/png, image/heic, image/heif] }
+        size: { type: integer }
+        object_key: { type: string }
+        checksum: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+        accuracy: { type: number }
+        geohash: { type: string }
+        phash: { type: string }
+        scan_status: { type: string, enum: [clean, infected, failed], nullable: true }
+        uploaded_by: { type: integer }
+        created_at: { type: string, format: date-time }
+        url:
+          type: string
+          format: uri
+          nullable: true
+          description: Temporary URL that allows clients to fetch the evidence file
+    Approval:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        report_id: { type: string, format: uuid }
+        approver_id: { type: integer }
+        status: { type: string, enum: [pending, approved, rejected, revision] }
+        note: { type: string, nullable: true }
+        decided_at: { type: string, format: date-time, nullable: true }
+    Signature:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        report_id: { type: string, format: uuid }
+        provider: { type: string }
+        signed_pdf_key: { type: string, nullable: true }
+        signature_type: { type: string, enum: [PAdES] }
+        cert_subject: { type: string, nullable: true }
+        cert_serial: { type: string, nullable: true }
+        signed_at: { type: string, format: date-time, nullable: true }
+        ocsp_status: { type: object, additionalProperties: true, nullable: true }
+        tsa_timestamp: { type: object, additionalProperties: true, nullable: true }
+        pdf_hash: { type: string, nullable: true }
+    Notification:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: integer }
+        channel: { type: string, enum: [email, wa, app] }
+        payload: { type: object, additionalProperties: true }
+        sent_at: { type: string, format: date-time, nullable: true }
+        read_at: { type: string, format: date-time, nullable: true }
+        status: { type: string, nullable: true }
+    EvidencePresignRequest:
+      type: object
+      properties:
+        mime:
+          type: string
+          description: MIME type of the evidence being uploaded
+          enum: [image/jpeg, image/png, image/heic, image/heif]
+        original_name:
+          type: string
+          nullable: true
+          description: Original filename supplied by the client (optional)
+        size:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Optional file size hint in bytes for validation
+    EvidenceFinalizeRequest:
+      type: object
+      required: [object_key]
+      properties:
+        object_key:
+          type: string
+          description: Object key returned by presign after upload
+        original_name:
+          type: string
+          nullable: true
+        mime:
+          type: string
+          nullable: true
+        size:
+          type: integer
+          minimum: 1
+          nullable: true
+    ReviewDecision:
+      type: object
+      required: [decision]
+      properties:
+        decision: { type: string, enum: [approve, reject, revision] }
+        note: { type: string, nullable: true }
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string, format: email }
+        unit_id: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time, nullable: true }
+        updated_at: { type: string, format: date-time, nullable: true }
+    Role:
+      type: object
+      properties:
+        id: { type: integer }
+        nama: { type: string }
+    Permission:
+      type: object
+      properties:
+        id: { type: integer }
+        function: { type: string }
+        apps: { type: string }
+    Unit:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        code: { type: string }
+        created_at: { type: string, format: date-time, nullable: true }
+        updated_at: { type: string, format: date-time, nullable: true }
+    Asset:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        code: { type: string }
+        status: { type: string, enum: [available, borrowed, maintenance, retired] }
+        category: { type: string, nullable: true }
+        serial_number: { type: string, nullable: true }
+        purchase_price:
+          type: string
+          nullable: true
+          description: Decimal string representation of purchase price
+        purchased_at: { type: string, format: date-time, nullable: true }
+        unit_id: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time, nullable: true }
+        updated_at: { type: string, format: date-time, nullable: true }
+    AssetLoan:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        asset_id: { type: string, format: uuid }
+        borrower_id: { type: integer }
+        loan_lat: { type: number, format: double }
+        loan_long: { type: number, format: double }
+        location_name: { type: string, nullable: true }
+        borrowed_at: { type: string, format: date-time }
+        returned_at: { type: string, format: date-time, nullable: true }
+    AssetMaintenance:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        asset_id: { type: string, format: uuid }
+        description: { type: string }
+        started_at: { type: string, format: date-time }
+        finished_at: { type: string, format: date-time, nullable: true }
+        performed_by: { type: integer, nullable: true }
+        return_to_active_location: { type: boolean }
+    AssetStatusHistory:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        asset_id: { type: string, format: uuid }
+        status_key: { type: string, enum: [available, borrowed, maintenance, retired] }
+        changed_at: { type: string, format: date-time }
+        changed_by: { type: integer, nullable: true }
+        note: { type: string, nullable: true }
+    AssetCreateRequest:
+      type: object
+      required: [name, code]
+      properties:
+        name: { type: string }
+        code: { type: string }
+        category: { type: string }
+        serial_number: { type: string }
+        purchase_price: { type: string }
+        purchased_at: { type: string, format: date-time }
+        unit_id: { type: string, format: uuid }
+    AssetUpdateRequest:
+      type: object
+      properties:
+        name: { type: string }
+        category: { type: string }
+        serial_number: { type: string }
+        purchase_price: { type: string }
+        purchased_at: { type: string, format: date-time }
+        unit_id: { type: string, format: uuid }
+    AssetActivateRequest:
+      type: object
+      required: [borrower_id]
+      properties:
+        borrower_id: { type: integer }
+        lat: { type: number, format: double, nullable: true }
+        long: { type: number, format: double, nullable: true }
+        location_name: { type: string, nullable: true }
+        pic: { type: string, nullable: true }
+        note: { type: string, nullable: true }
+    AssetDeactivateRequest:
+      type: object
+      properties:
+        actor_id: { type: integer, nullable: true }
+    AssetMaintenanceStartRequest:
+      type: object
+      required: [description]
+      properties:
+        description: { type: string }
+        performed_by: { type: integer, nullable: true }
+        return_to_active_location:
+          type: boolean
+          default: true
+    AssetMaintenanceCompleteRequest:
+      type: object
+      properties:
+        actor_id: { type: integer, nullable: true }
+    AssetRetireRequest:
+      type: object
+      properties:
+        note: { type: string, nullable: true }
+    AssetAttachRequest:
+      type: object
+      properties:
+        note: { type: string, nullable: true }
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+security:
+  - bearerAuth: []
+paths:
+  /reports:
+    get:
+      tags: [Reports]
+      operationId: listReports
+      summary: List reports
+      parameters:
+        - in: query
+          name: with
+          description: Comma separated includes.
+          Allowed: evidences,creator,user,assignees,approvals,signature,comments,unit,assets
+          schema:
+            type: string
+        - in: query
+          name: select
+          description: If 'yes', returns up to 100 items without pagination
+          schema: { type: string, enum: [yes] }
+        - in: query
+          name: page
+          description: Page number (1-based)
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: page_size
+          description: Items per page (default 10)
+          schema: { type: integer, minimum: 1, default: 10 }
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft, submitted, review, revision, approved, rejected] }
+        - in: query
+          name: unit
+          schema: { type: string, format: uuid }
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    post:
+      tags: [Reports]
+      operationId: createReport
+      summary: Create draft report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                category: { type: string }
+                location: { type: string }
+                lat: { type: number }
+                lng: { type: number }
+                accuracy: { type: number }
+                event_at: { type: string, format: date-time }
+                unit_id: { type: string, format: uuid }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /reports/export:
+    get:
+      tags: [Reports]
+      operationId: exportReports
+      summary: Export reports as CSV/XLSX
+      parameters:
+        - in: query
+          name: format
+          schema: { type: string, enum: [csv, xlsx], default: csv }
+      responses:
+        '200':
+          description: Export file
+          content:
+            text/csv: { schema: { type: string, format: binary } }
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet: { schema: { type: string, format: binary } }
+  /reports/{id}:
+    get:
+      tags: [Reports]
+      operationId: getReport
+      summary: Get report detail
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: with
+          description: Comma separated includes.
+          Allowed: evidences,creator,user,assignees,approvals,signature,comments,unit,assets
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    put:
+      tags: [Reports]
+      operationId: updateReport
+      summary: Update draft/revision report
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                category: { type: string }
+                location: { type: string }
+                lat: { type: number }
+                lng: { type: number }
+                accuracy: { type: number }
+                event_at: { type: string, format: date-time }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    delete:
+      tags: [Reports]
+      operationId: deleteReport
+      summary: Delete draft/revision report
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /reports/{id}/evidences/presign:
+    post:
+      tags: [Evidences]
+      operationId: presignEvidence
+      summary: Generate presigned URL for evidence upload
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EvidencePresignRequest' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /reports/{id}/evidences/finalize:
+    post:
+      tags: [Evidences]
+      operationId: finalizeEvidence
+      summary: Finalize evidence uploaded via presign
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EvidenceFinalizeRequest' }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /reports/{id}/assignees:
+    post:
+      tags: [Reports]
+      operationId: syncAssignees
+      summary: Sync assignees (replace)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_ids]
+              properties:
+                user_ids:
+                  type: array
+                  items: { type: integer }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /reports/{id}/assignees/{userId}:
+    delete:
+      tags: [Reports]
+      operationId: removeAssignee
+      summary: Remove assignee
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: userId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /reports/{id}/assets:
+    get:
+      tags: [Reports]
+      operationId: listReportAssets
+      summary: List assets attached to a report
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /reports/{id}/assets/{assetId}:
+    delete:
+      tags: [Reports]
+      operationId: detachAssetFromReport
+      summary: Detach an asset from a report
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: assetId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /reports/{id}/evidences/{evidenceId}:
+    get:
+      tags: [Evidences]
+      operationId: getEvidence
+      summary: Get evidence detail
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: evidenceId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    delete:
+      tags: [Evidences]
+      operationId: deleteEvidence
+      summary: Delete evidence (draft/revision only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: evidenceId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /reports/{id}/submit:
+    post:
+      tags: [Approvals]
+      operationId: submitReport
+      summary: Submit report
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /reports/{id}/review:
+    post:
+      tags: [Approvals]
+      operationId: reviewReport
+      summary: Review report (approve/reject/revision)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReviewDecision' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /reports/{id}/pdf:
+    get:
+      tags: [Reports]
+      operationId: getReportPdf
+      summary: Get signed PDF
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: PDF, content: { application/pdf: { schema: { type: string, format: binary } } } }
+        '404': { description: Not found }
+  /login:
+    post:
+      tags: [Auth]
+      summary: Login to obtain access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /auth:
+    get:
+      tags: [Auth]
+      summary: Get current user data
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    put:
+      tags: [Auth]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    patch:
+      tags: [Auth]
+      summary: Partially update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /upload:
+    post:
+      tags: [Storage]
+      summary: Upload a file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                upload: { type: string, format: binary }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /user:
+    get:
+      tags: [Users]
+      summary: List users
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: page_size
+          schema: { type: integer, minimum: 1, default: 10 }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: select
+          description: If 'yes', returns up to 100 items without pagination
+          schema: { type: string, enum: [yes] }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    post:
+      tags: [Users]
+      summary: Create user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                roles: { type: array, items: { type: integer }, nullable: true }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /user/{id}:
+    get:
+      tags: [Users]
+      summary: Get user detail
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    put:
+      tags: [Users]
+      summary: Update user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                roles: { type: array, items: { type: integer }, nullable: true }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    patch:
+      tags: [Users]
+      summary: Partially update user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                roles: { type: array, items: { type: integer }, nullable: true }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    delete:
+      tags: [Users]
+      summary: Delete user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /assets:
+    get:
+      tags: [Assets]
+      operationId: listAssets
+      summary: List assets
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [available, borrowed, maintenance, retired] }
+        - in: query
+          name: unit_id
+          schema: { type: string, format: uuid }
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: page_size
+          schema: { type: integer, minimum: 1, default: 10 }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    post:
+      tags: [Assets]
+      operationId: createAsset
+      summary: Create asset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssetCreateRequest' }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /assets/{id}:
+    get:
+      tags: [Assets]
+      operationId: getAsset
+      summary: Get asset detail
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    put:
+      tags: [Assets]
+      operationId: updateAsset
+      summary: Update asset
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssetUpdateRequest' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    delete:
+      tags: [Assets]
+      operationId: deleteAsset
+      summary: Delete asset (retired only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /assets/{id}/activate:
+    post:
+      tags: [Assets]
+      operationId: activateAsset
+      summary: Activate asset
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssetActivateRequest' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /assets/{id}/deactivate:
+    post:
+      tags: [Assets]
+      operationId: deactivateAsset
+      summary: Deactivate asset
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssetDeactivateRequest' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /assets/{id}/maintenance:
+    post:
+      tags: [Assets]
+      operationId: startAssetMaintenance
+      summary: Start asset maintenance
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssetMaintenanceStartRequest' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /assets/{id}/maintenance/complete:
+    post:
+      tags: [Assets]
+      operationId: completeAssetMaintenance
+      summary: Complete asset maintenance
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssetMaintenanceCompleteRequest' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /assets/{id}/retire:
+    post:
+      tags: [Assets]
+      operationId: retireAsset
+      summary: Retire asset
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssetRetireRequest' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /assets/{id}/reports/{reportId}:
+    post:
+      tags: [Assets]
+      operationId: attachAssetToReport
+      summary: Attach asset to report evidence
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: reportId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssetAttachRequest' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /roles:
+    get:
+      tags: [Roles]
+      summary: List roles
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: page_size
+          schema: { type: integer, minimum: 1, default: 10 }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    post:
+      tags: [Roles]
+      summary: Create role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nama]
+              properties:
+                nama: { type: string }
+                permission_ids: { type: array, items: { type: integer }, nullable: true }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /roles/{id}:
+    get:
+      tags: [Roles]
+      summary: Get role
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /units:
+    get:
+      tags: [Units]
+      operationId: listUnits
+      summary: List units
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: page_size
+          schema: { type: integer, minimum: 1, default: 10 }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: select
+          description: If 'yes', returns up to 100 items without pagination
+          schema: { type: string, enum: [yes] }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    post:
+      tags: [Units]
+      operationId: createUnit
+      summary: Create unit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, code]
+              properties:
+                name: { type: string }
+                code: { type: string }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /units/{id}:
+    get:
+      tags: [Units]
+      operationId: getUnit
+      summary: Get unit detail
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    put:
+      tags: [Units]
+      operationId: updateUnit
+      summary: Update unit
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                code: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    patch:
+      tags: [Units]
+      operationId: patchUnit
+      summary: Partially update unit
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                code: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    delete:
+      tags: [Units]
+      operationId: deleteUnit
+      summary: Delete unit
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /permission:
+    get:
+      tags: [Permissions]
+      summary: List permissions
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /permission/apps:
+    get:
+      tags: [Permissions]
+      summary: List permission apps
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /notifications:
+    get:
+      tags: [Notifications]
+      operationId: listNotifications
+      summary: List my notifications
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: page_size
+          schema: { type: integer, minimum: 1, default: 10 }
+        - in: query
+          name: select
+          description: If 'yes', returns up to 100 items without pagination
+          schema: { type: string, enum: [yes] }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /notifications/read-all:
+    post:
+      tags: [Notifications]
+      operationId: markAllRead
+      summary: Mark all my notifications as read
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /notifications/{notificationId}/read:
+    post:
+      tags: [Notifications]
+      operationId: markRead
+      summary: Mark notification as read
+      parameters:
+        - in: path
+          name: notificationId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+
+  /locations:
+    get:
+      tags: [Locations]
+      operationId: listLocations
+      summary: List locations
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: page_size
+          schema: { type: integer, minimum: 1, default: 10 }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    post:
+      tags: [Locations]
+      operationId: createLocation
+      summary: Create location
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, lat, long]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                lat: { type: number, format: double }
+                long: { type: number, format: double }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+
+  /locations/{id}:
+    get:
+      tags: [Locations]
+      operationId: getLocation
+      summary: Get location details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    put:
+      tags: [Locations]
+      operationId: updateLocation
+      summary: Update location
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                lat: { type: number, format: double }
+                long: { type: number, format: double }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    delete:
+      tags: [Locations]
+      operationId: deleteLocation
+      summary: Delete location
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+
+  /asset-categories:
+    get:
+      tags: [Categories]
+      operationId: listAssetCategories
+      summary: List asset categories
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: page_size
+          schema: { type: integer, minimum: 1, default: 10 }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    post:
+      tags: [Categories]
+      operationId: createAssetCategory
+      summary: Create asset category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                description: { type: string }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+
+  /asset-categories/{id}:
+    get:
+      tags: [Categories]
+      operationId: getAssetCategory
+      summary: Get asset category details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    put:
+      tags: [Categories]
+      operationId: updateAssetCategory
+      summary: Update asset category
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    delete:
+      tags: [Categories]
+      operationId: deleteAssetCategory
+      summary: Delete asset category
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+
+  /report-categories:
+    get:
+      tags: [Categories]
+      operationId: listReportCategories
+      summary: List report categories
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: page_size
+          schema: { type: integer, minimum: 1, default: 10 }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    post:
+      tags: [Categories]
+      operationId: createReportCategory
+      summary: Create report category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                description: { type: string }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+
+  /report-categories/{id}:
+    get:
+      tags: [Categories]
+      operationId: getReportCategory
+      summary: Get report category details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    put:
+      tags: [Categories]
+      operationId: updateReportCategory
+      summary: Update report category
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+    delete:
+      tags: [Categories]
+      operationId: deleteReportCategory
+      summary: Delete report category
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+
+  /verify:
+    get:
+      tags: [Verify]
+      operationId: verify
+      summary: Verify signed report
+      parameters:
+        - in: query
+          name: number
+          schema: { type: string }
+        - in: query
+          name: hash
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+  /health:
+    get:
+      tags: [System]
+      operationId: health
+      summary: Healthcheck
+      responses:
+        '200': { description: OK }
+  /metrics:
+    get:
+      tags: [System]
+      operationId: metrics
+      summary: Metrics (text/plain)
+      responses:
+        '200': { description: OK, content: { text/plain: { schema: { type: string } } } }
