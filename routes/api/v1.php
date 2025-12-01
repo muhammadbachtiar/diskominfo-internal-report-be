@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\API\V1\Asset\Category\CreateAssetCategoryController;
+use App\Http\Controllers\API\V1\Asset\Category\IndexAssetCategoryController;
 use App\Http\Controllers\API\V1\Asset\CRUD\CreateAssetController;
 use App\Http\Controllers\API\V1\Asset\CRUD\DeleteAssetController;
 use App\Http\Controllers\API\V1\Asset\CRUD\DetailAssetController;
@@ -133,6 +135,11 @@ Route::prefix('assets')->middleware(['auth:api'])->group(function () {
         Route::post('retire', RetireAssetController::class);
         Route::post('reports/{report}', AttachAssetToReportController::class);
     });
+});
+
+Route::prefix('asset-categories')->middleware(['auth:api'])->group(function () {
+    Route::get('', IndexAssetCategoryController::class);
+    Route::post('', CreateAssetCategoryController::class);
 });
 
 Route::get('verify', VerifyController::class);
