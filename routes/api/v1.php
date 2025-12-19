@@ -2,6 +2,18 @@
 
 use App\Http\Controllers\API\V1\Asset\Category\CreateAssetCategoryController;
 use App\Http\Controllers\API\V1\Asset\Category\IndexAssetCategoryController;
+use App\Http\Controllers\API\V1\Asset\Category\DeleteAssetCategoryController;
+use App\Http\Controllers\API\V1\Asset\Category\DetailAssetCategoryController;
+use App\Http\Controllers\API\V1\Asset\Category\UpdateAssetCategoryController;
+use App\Http\Controllers\API\V1\Asset\Location\CreateLocationController;
+use App\Http\Controllers\API\V1\Asset\Location\DeleteLocationController;
+use App\Http\Controllers\API\V1\Asset\Location\DetailLocationController;
+use App\Http\Controllers\API\V1\Asset\Location\IndexLocationController;
+use App\Http\Controllers\API\V1\Asset\Location\UpdateLocationController;
+use App\Http\Controllers\API\V1\Report\Category\CreateReportCategoryController;
+use App\Http\Controllers\API\V1\Report\Category\DeleteReportCategoryController;
+use App\Http\Controllers\API\V1\Report\Category\DetailReportCategoryController;
+use App\Http\Controllers\API\V1\Report\Category\IndexReportCategoryController;
 use App\Http\Controllers\API\V1\Asset\CRUD\CreateAssetController;
 use App\Http\Controllers\API\V1\Asset\CRUD\DeleteAssetController;
 use App\Http\Controllers\API\V1\Asset\CRUD\DetailAssetController;
@@ -15,6 +27,7 @@ use App\Http\Controllers\API\V1\Asset\Report\AttachAssetToReportController;
 use App\Http\Controllers\API\V1\Asset\Status\RetireAssetController;
 use App\Http\Controllers\API\V1\Permission\Apps\IndexAppsListController;
 use App\Http\Controllers\API\V1\Permission\CRUD\IndexPermissionController;
+use App\Http\Controllers\API\V1\Report\Category\UpdateReportCategoryController;
 use App\Http\Controllers\API\V1\Roles\CRUD\CreateRoleController;
 use App\Http\Controllers\API\V1\Roles\CRUD\DeleteRoleController;
 use App\Http\Controllers\API\V1\Roles\CRUD\DetailRoleController;
@@ -120,6 +133,16 @@ Route::prefix('reports')->middleware(['auth:api'])->group(function (){
     });
 });
 
+Route::prefix('report-categories')->middleware(['auth:api'])->group(function () {
+    Route::get('', IndexReportCategoryController::class);
+    Route::post('', CreateReportCategoryController::class);
+    Route::prefix('{report_category}')->group(function () {
+        Route::get(uri: '', action: DetailReportCategoryController::class);
+        Route::put(uri: '', action: UpdateReportCategoryController::class);
+        Route::delete(uri: '', action: DeleteReportCategoryController::class);
+    });
+});
+
 Route::prefix('assets')->middleware(['auth:api'])->group(function () {
     Route::get('', IndexAssetController::class);
     Route::post('', CreateAssetController::class);
@@ -140,6 +163,22 @@ Route::prefix('assets')->middleware(['auth:api'])->group(function () {
 Route::prefix('asset-categories')->middleware(['auth:api'])->group(function () {
     Route::get('', IndexAssetCategoryController::class);
     Route::post('', CreateAssetCategoryController::class);
+     Route::prefix('{asset_category}')->group(function () {
+        Route::get(uri: '', action: DetailAssetCategoryController::class);
+        Route::put(uri: '', action: UpdateAssetCategoryController::class);
+        Route::delete(uri: '', action: DeleteAssetCategoryController::class);
+    });
+});
+
+
+Route::prefix('locations')->middleware(['auth:api'])->group(function () {
+    Route::get(uri: '', action: IndexLocationController::class);
+    Route::post(uri: '', action: CreateLocationController::class);
+    Route::prefix('{location}')->group(function () {
+        Route::get(uri: '', action: DetailLocationController::class);
+        Route::put(uri: '', action: UpdateLocationController::class);
+        Route::delete(uri: '', action: DeleteLocationController::class);
+    });
 });
 
 Route::get('verify', VerifyController::class);

@@ -20,9 +20,10 @@ class DeactivateAssetController extends BaseController
 
             $data = $request->validate([
                 'actor_id' => ['nullable', 'integer'],
+                'note' => ['nullable', 'string'],
             ]);
 
-            ReturnAssetService::resolve()->execute($asset, $data['actor_id'] ?? null);
+            ReturnAssetService::resolve()->execute($asset, $data['actor_id'] ?? null, $data['note'] ?? null);
 
             return $this->resolveForSuccessResponseWith('Asset deactivated');
         } catch (ValidationException $e) {

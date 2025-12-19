@@ -55,6 +55,7 @@ class CreateAssetAction extends Action
             status: AssetStatus::Available,
             category: Arr::get($payload, 'category'),
             serialNumber: Arr::get($payload, 'serial_number'),
+            categoryId: Arr::get($payload, 'category_id'),
             unitId: Arr::get($payload, 'unit_id'),
             purchasePrice: Arr::get($payload, 'purchase_price'),
             purchasedAt: Arr::get($payload, 'purchased_at')

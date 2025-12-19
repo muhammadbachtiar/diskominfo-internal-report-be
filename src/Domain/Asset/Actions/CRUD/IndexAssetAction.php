@@ -15,7 +15,7 @@ class IndexAssetAction extends Action
     {
         CheckRolesAction::resolve()->execute('view-asset');
 
-        $query = Asset::query()->with('unit');
+        $query = Asset::query()->with(['unit', 'currentLoan', 'category']);
 
         if ($status = Arr::get($filters, 'status')) {
             $query->where('status', $status);

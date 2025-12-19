@@ -3,6 +3,7 @@
 namespace Domain\Asset\Services;
 
 use Carbon\CarbonImmutable;
+use Domain\Asset\Actions\CRUD\UpdateAssetAction;
 use Domain\Asset\Entities\AssetStatusHistory;
 use Domain\Asset\Enums\AssetStatus;
 use Domain\Asset\Repositories\AssetLoanRepositoryInterface;
@@ -26,27 +27,25 @@ class ReturnAssetService extends Action
     ) {
     }
 
-    public function execute(string $assetId, ?int $actorId = null): void
+    public function execute(string $assetId, int $actorId = null, ?string $note = null): void
     {
         $asset = $this->assets->find($assetId);
         if (! $asset) {
             throw (new ModelNotFoundException())->setModel('assets', [$assetId]);
         }
 
-        if (! $asset->status->canTransitionTo(AssetStatus::Available)) {
-            throw new InvalidArgumentException('Asset cannot be returned in its current status.');
-        }
-
         $loan = $this->loans->findOpenLoanByAsset($assetId);
-        if (! $loan) {
+        if (! $loan || $asset->locationId === null) {
             throw new InvalidArgumentException('Asset has no active loan to close.');
         }
 
+        UpdateAssetAction::resolve()->execute($assetId, [
+            'location_id' => null,
+        ]);
+
         $returnedLoan = $loan->markReturned(CarbonImmutable::now());
         $this->loans->save($returnedLoan);
-
-        $this->assets->updateStatus($assetId, AssetStatus::Available);
-        $this->statusHistories->record($this->buildHistory($assetId, AssetStatus::Available, 'Asset deactivated', $actorId));
+        $this->statusHistories->record($this->buildHistory($assetId, AssetStatus::Available, $note ? "$note" : 'Asset activated', $actorId));
 
         AuditLogger::log('asset.deactivate', 'asset_loans', $loan->id, [
             'asset_id' => $assetId,

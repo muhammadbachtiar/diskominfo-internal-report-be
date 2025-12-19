@@ -24,6 +24,7 @@ class CreateReportController extends BaseController
                 'accuracy' => 'nullable|numeric',
                 'event_at' => 'nullable|date',
                 'unit_id' => 'nullable|uuid',
+                'category_id' => 'nullable|uuid',
             ]);
             $report = CreateDraftReportAction::resolve()->execute($data);
             return $this->resolveForSuccessResponseWith('Draft created', $report, HttpStatus::Created);

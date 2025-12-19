@@ -4,6 +4,7 @@ namespace Domain\Asset\Services;
 
 use Carbon\CarbonImmutable;
 use Domain\Asset\Entities\AssetStatusHistory;
+use Domain\Asset\Enums\AssetStatus;
 use Domain\Asset\Repositories\AssetRepositoryInterface;
 use Domain\Asset\Repositories\AssetStatusHistoryRepositoryInterface;
 use Domain\Shared\Services\AuditLogger;
@@ -44,10 +45,10 @@ class AttachAssetToReportService extends Action
         $this->statusHistories->record(new AssetStatusHistory(
             id: (string) Uuid::uuid7(),
             assetId: $assetId,
-            status: $asset->status,
+            status: AssetStatus::Attached,
             changedAt: CarbonImmutable::now(),
             changedBy: auth()->id(),
-            note: sprintf('Asset attached to report %s', $reportLabel),
+            note: $note ? "$note | Laporan : $reportLabel" : sprintf('Asset attached to report %s', $reportLabel),
         ));
     }
 }

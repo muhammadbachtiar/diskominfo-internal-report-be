@@ -19,7 +19,7 @@ class ListReportsAction extends Action
         $allowedIncludes = config('report.report_allowed_includes', []);
         $includes = IncludeParser::parse(Arr::get($filters, 'with'), $allowedIncludes);
 
-        $query = Report::query();
+        $query = Report::query()->with(['category']);
 
         if (! empty($includes)) {
             $query->with($includes);

@@ -22,6 +22,7 @@ class CreateAssetController extends BaseController
                 'purchase_price' => ['nullable', 'numeric'],
                 'purchased_at' => ['nullable', 'date'],
                 'unit_id' => ['nullable', 'uuid'],
+                'category_id' => ['nullable', 'uuid'],
             ]);
 
             $asset = CreateAssetAction::resolve()->execute($data);

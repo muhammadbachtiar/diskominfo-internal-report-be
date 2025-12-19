@@ -7,11 +7,20 @@ services:
     ports:
       - "8000:8000"
     environment:
-      APP_ENV: local
+      APP_ENV: ${APP_ENV}
       APP_DEBUG: true
-      APP_URL: http://localhost:8000
+      APP_URL: ${APP_URL}
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST}
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - ./storage:/app/storage        # hanya storage yang di-mount
+      # - ./storage:/app/storage        # hanya storage yang di-mount (Production)
+      - .:/app                       # mount seluruh project (Development)
+      - /app/vendor                 # agar vendor tidak ter-overwrite (Development)
+      - /app/node_modules            # agar node_modules tidak ter-overwrite (Development)
     working_dir: /app
     command: >
       php artisan octane:frankenphp
@@ -34,6 +43,13 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: internal_reporting_queue
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST}
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./storage:/app/storage
     working_dir: /app
@@ -46,13 +62,11 @@ services:
 
   postgres:
     image: postgres:15
-    container_name: laporan_postgres
+    container_name: internal_reporting_postgres
     environment:
-      POSTGRES_DB: laporan
-      POSTGRES_USER: laporan
-      POSTGRES_PASSWORD: laporan
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: internal_reporting
+      POSTGRES_USER: internal_report_user
+      POSTGRES_PASSWORD: Kominfo@1234!@
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

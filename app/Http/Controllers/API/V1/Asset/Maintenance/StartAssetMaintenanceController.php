@@ -30,7 +30,7 @@ class StartAssetMaintenanceController extends BaseController
                 $data['performed_by'] ?? null,
                 array_key_exists('return_to_active_location', $data)
                     ? (bool) $data['return_to_active_location']
-                    : true,
+                    : false,
             );
 
             return $this->resolveForSuccessResponseWith('Maintenance started', $maintenance);

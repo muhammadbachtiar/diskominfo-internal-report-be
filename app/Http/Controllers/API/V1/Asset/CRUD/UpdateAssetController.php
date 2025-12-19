@@ -22,6 +22,7 @@ class UpdateAssetController extends BaseController
                 'purchase_price' => ['sometimes', 'nullable', 'numeric'],
                 'purchased_at' => ['sometimes', 'nullable', 'date'],
                 'unit_id' => ['sometimes', 'nullable', 'uuid'],
+                'category_id' => ['sometimes', 'nullable', 'uuid'],
             ]);
 
             $assetData = UpdateAssetAction::resolve()->execute($asset, $data);

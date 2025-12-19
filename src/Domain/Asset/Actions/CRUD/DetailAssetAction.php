@@ -14,7 +14,7 @@ class DetailAssetAction extends Action
         CheckRolesAction::resolve()->execute('view-asset');
 
         $asset = Asset::query()
-            ->with(['unit', 'currentLoan.borrower', 'maintenances', 'statusHistories'])
+            ->with(['unit', 'currentLoan.borrower', 'maintenances', 'statusHistories.actor'])
             ->find($assetId);
 
         if (! $asset) {

@@ -3,6 +3,7 @@
 namespace Domain\Asset\Services;
 
 use Carbon\CarbonImmutable;
+use Domain\Asset\Actions\CRUD\UpdateAssetAction;
 use Domain\Asset\Entities\AssetLoan;
 use Domain\Asset\Entities\AssetLocation;
 use Domain\Asset\Entities\AssetStatusHistory;
@@ -14,6 +15,7 @@ use Domain\Asset\Repositories\AssetStatusHistoryRepositoryInterface;
 use Domain\Notification\Actions\SendAppNotificationAction;
 use Domain\Shared\Services\AuditLogger;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Infra\Asset\Models\Location;
 use Infra\Shared\Foundations\Action;
 use Infra\User\Models\User;
 use InvalidArgumentException;
@@ -33,65 +35,68 @@ class BorrowAssetService extends Action
     public function execute(
         string $assetId,
         int $borrowerId,
-        ?float $lat = null,
-        ?float $long = null,
-        ?string $locationName = null,
+        string $locationId,
         ?string $picName = null,
         ?string $note = null,
     ): AssetLoan
     {
-        $this->assertValidGpsIfProvided($lat, $long);
+   
         $asset = $this->assets->find($assetId);
         if (! $asset) {
             throw (new ModelNotFoundException())->setModel('assets', [$assetId]);
         }
 
-        if (! $asset->status->canTransitionTo(AssetStatus::Borrowed)) {
-            throw new InvalidArgumentException('Asset is not available to be borrowed.');
-        }
-
         $existingLoan = $this->loans->findOpenLoanByAsset($assetId);
-        if ($existingLoan) {
+        if ($existingLoan || $asset->locationId !== null) {
             throw new InvalidArgumentException('Asset currently has an active loan record.');
         }
+
+        UpdateAssetAction::resolve()->execute($assetId, [
+            'location_id' => $locationId,
+        ]);
+
+        $location = Location::findOrFail($locationId);
+
+        $this->assertValidGpsIfProvided($location->latitude, $location->longitude);
 
         $loan = new AssetLoan(
             id: (string) Uuid::uuid7(),
             assetId: $assetId,
             borrowerId: $borrowerId,
-            loanLat: $lat,
-            loanLong: $long,
+            loanLat: $location->latitude,
+            loanLong: $location->longitude,
             borrowedAt: CarbonImmutable::now(),
-            locationName: $locationName,
+            locationName: $location->name,
             picName: $picName,
             note: $note,
         );
         $loan = $this->loans->create($loan);
 
-        if ($lat !== null && $long !== null) {
+        if ($location->latitude !== null && $location->longitude !== null) {
             $this->locations->record(new AssetLocation(
                 id: (string) Uuid::uuid7(),
                 assetLoanId: $loan->id,
-                lat: $lat,
-                longitude: $long,
-                locationName: $locationName,
+                lat: $location->latitude,
+                longitude: $location->longitude,
+                locationName: $location->name,
             ));
         }
 
-        $this->assets->updateStatus($assetId, AssetStatus::Borrowed);
         $this->statusHistories->record(new AssetStatusHistory(
             id: (string) Uuid::uuid7(),
             assetId: $assetId,
             status: AssetStatus::Borrowed,
             changedAt: CarbonImmutable::now(),
             changedBy: auth()->id(),
-            note: 'Asset activated',
+            note: $note 
+            ? "$note | Lokasi : $location->name ($picName)"
+            : 'Asset activated',
         ));
 
         AuditLogger::log('asset.activate', 'asset_loans', $loan->id, [
             'asset_id' => $assetId,
             'borrower_id' => $borrowerId,
-            'location' => ['lat' => $lat, 'long' => $long, 'name' => $locationName],
+            'location' => ['lat' => $location->latitude, 'long' => $location->longitude, 'name' => $location->name],
             'pic_name' => $picName,
             'note' => $note,
         ]);
@@ -100,7 +105,7 @@ class BorrowAssetService extends Action
             'event' => 'asset.activated',
             'asset_id' => $assetId,
             'borrower_id' => $borrowerId,
-            'location' => ['lat' => $lat, 'long' => $long, 'name' => $locationName],
+            'location' => ['lat' => $location->latitude, 'long' => $location->longitude, 'name' => $location->name],
             'pic_name' => $picName,
             'note' => $note,
         ], $borrowerId);

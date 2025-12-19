@@ -30,8 +30,10 @@ class EloquentAssetRepository implements AssetRepositoryInterface
         $model->code = $asset->code;
         $model->status = $asset->status->value;
         $model->category = $asset->category;
+        $model->category_id = $asset->categoryId;
         $model->serial_number = $asset->serialNumber;
         $model->unit_id = $asset->unitId;
+        $model->location_id = $asset->locationId;
         $model->purchase_price = $asset->purchasePrice;
         $model->purchased_at = $asset->purchasedAt?->toDateTimeString();
         $model->save();
@@ -76,6 +78,8 @@ class EloquentAssetRepository implements AssetRepositoryInterface
             category: $model->category,
             serialNumber: $model->serial_number,
             unitId: $model->unit_id,
+            categoryId: $model->category_id,
+            locationId: $model->location_id,
             purchasePrice: $model->purchase_price !== null ? (string) $model->purchase_price : null,
             purchasedAt: $model->purchased_at ? CarbonImmutable::parse($model->purchased_at) : null,
             createdAt: $model->created_at ? CarbonImmutable::parse($model->created_at) : null,

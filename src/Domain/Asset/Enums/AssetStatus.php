@@ -8,6 +8,9 @@ enum AssetStatus: string
     case Borrowed = 'borrowed';
     case Maintenance = 'maintenance';
     case Retired = 'retired';
+    case Completed = 'completed'; 
+
+    case Attached = 'attached';
 
     public function canTransitionTo(self $next): bool
     {
@@ -16,6 +19,8 @@ enum AssetStatus: string
             self::Borrowed => in_array($next, [self::Available, self::Maintenance], true),
             self::Maintenance => in_array($next, [self::Available, self::Retired], true),
             self::Retired => $next === self::Retired,
+            self::Completed => $next === self::Completed,
+            self::Attached => $next === self::Attached
         };
     }
 
@@ -26,6 +31,8 @@ enum AssetStatus: string
             self::Borrowed => 'Borrowed',
             self::Maintenance => 'Maintenance',
             self::Retired => 'Retired',
+            self::Completed => 'Completed',
+            self::Attached => 'Attached',
         };
     }
 

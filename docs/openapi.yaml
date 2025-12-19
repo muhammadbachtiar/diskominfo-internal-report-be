@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Laporan Internal API
   version: 1.0.0
@@ -258,6 +258,7 @@ components:
         purchase_price: { type: string }
         purchased_at: { type: string, format: date-time }
         unit_id: { type: string, format: uuid }
+        category_id: { type: string, format: uuid }
     AssetUpdateRequest:
       type: object
       properties:
@@ -267,14 +268,12 @@ components:
         purchase_price: { type: string }
         purchased_at: { type: string, format: date-time }
         unit_id: { type: string, format: uuid }
+        category_id: { type: string, format: uuid }
     AssetActivateRequest:
       type: object
       required: [borrower_id]
       properties:
         borrower_id: { type: integer }
-        lat: { type: number, format: double, nullable: true }
-        long: { type: number, format: double, nullable: true }
-        location_name: { type: string, nullable: true }
         pic: { type: string, nullable: true }
         note: { type: string, nullable: true }
     AssetDeactivateRequest:

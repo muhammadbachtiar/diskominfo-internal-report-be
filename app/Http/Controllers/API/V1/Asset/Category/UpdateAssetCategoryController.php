@@ -1,35 +1,29 @@
 <?php
 
-namespace App\Http\Controllers\API\V1\Asset\Maintenance;
+namespace App\Http\Controllers\API\V1\Asset\Category;
 
-use Domain\Asset\Services\MarkAssetMaintenanceService;
-use Domain\Shared\Actions\CheckRolesAction;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Infra\Asset\Models\AssetCategory;
 use Infra\Shared\Controllers\BaseController;
 use Infra\Shared\Enums\HttpStatus;
 use InvalidArgumentException;
 
-class CompleteAssetMaintenanceController extends BaseController
+class UpdateAssetCategoryController extends BaseController
 {
-    public function __invoke(Request $request, string $asset)
+    public function __invoke(Request $request, string $asset_category)
     {
         try {
-            CheckRolesAction::resolve()->execute('maintain-asset');
-
             $data = $request->validate([
-                'actor_id' => ['nullable', 'integer'],
+                'name'        => ['required', 'string', 'max:255'],
                 'description' => ['nullable', 'string'],
             ]);
+            $category = AssetCategory::findOrFail($asset_category);
 
-            $maintenance = MarkAssetMaintenanceService::resolve()->complete(
-                $asset,
-                $data['actor_id'] ?? null,
-                $data['description'] ?? null
-            );
+            $category->update($data);
 
-            return $this->resolveForSuccessResponseWith('Maintenance completed', $maintenance);
+            return $this->resolveForSuccessResponseWith('Asset category updated', $category);
         } catch (ValidationException $e) {
             return $this->resolveForFailedResponseWith('Validation Error', $e->errors(), HttpStatus::UnprocessableEntity);
         } catch (ModelNotFoundException $e) {

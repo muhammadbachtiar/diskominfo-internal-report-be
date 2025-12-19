@@ -28,6 +28,7 @@ class CreateDraftReportAction extends Action
             'description' => $input['description'] ?? null,
             'category' => $input['category'] ?? null,
             'location' => $input['location'] ?? null,
+            'category_id' => $input['category_id'] ?? null,
             'lat' => $lat,
             'lng' => $lng,
             'accuracy' => $acc,
