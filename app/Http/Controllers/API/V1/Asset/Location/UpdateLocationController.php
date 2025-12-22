@@ -14,7 +14,7 @@ class UpdateLocationController extends BaseController
     public function __invoke(Request $request, Location $location)
     {
         try {
-            CheckRolesAction::resolve()->execute('manage-locations');
+            CheckRolesAction::resolve()->execute('edit-location');
 
             $data = $request->validate([
                 'name' => ['required', 'string'],

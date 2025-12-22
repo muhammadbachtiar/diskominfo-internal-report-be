@@ -11,7 +11,7 @@ class DetailLocationController extends BaseController
     public function __invoke(Location $location)
     {
         try {
-            CheckRolesAction::resolve()->execute('view-locations');
+            CheckRolesAction::resolve()->execute('view-location');
 
             return $this->resolveForSuccessResponseWith('location detail', $location);
         } catch (\Throwable $e) {

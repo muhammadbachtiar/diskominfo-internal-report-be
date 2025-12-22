@@ -11,7 +11,7 @@ class DeleteLocationController extends BaseController
     public function __invoke(Location $location)
     {
         try {
-            CheckRolesAction::resolve()->execute('manage-locations');
+            CheckRolesAction::resolve()->execute('delete-location');
 
             $location->delete();
 

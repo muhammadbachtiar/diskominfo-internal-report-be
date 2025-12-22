@@ -64,7 +64,13 @@ class PermissionSeeder extends Seeder
             ['function' => 'retire-asset', 'apps' => 'assets'],
             ['function' => 'attach-asset-report', 'apps' => 'assets'],
             ['function' => 'detach-asset-report', 'apps' => 'assets'],
-
+            
+            // Locations service
+            ['function' => 'view-location', 'apps' => 'locations'],
+            ['function' => 'add-location', 'apps' => 'locations'],
+            ['function' => 'edit-location', 'apps' => 'locations'],
+            ['function' => 'delete-location', 'apps' => 'locations'],
+            
             // Units service
             ['function' => 'add-unit', 'apps' => 'units'],
             ['function' => 'edit-unit', 'apps' => 'units'],
