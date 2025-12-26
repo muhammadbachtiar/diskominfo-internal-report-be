@@ -12,7 +12,7 @@ class DetailReportCategoryController extends BaseController
     public function __invoke( string $report_category)
     {
         try {
-            CheckRolesAction::resolve()->execute('view-asset-categories');
+            CheckRolesAction::resolve()->execute('view-report-category');
 
             $data = ReportCategory::where('id', $report_category)->firstOrFail();
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1\Asset\Category;
 
+use Domain\Shared\Actions\CheckRolesAction;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -15,6 +16,8 @@ class UpdateAssetCategoryController extends BaseController
     public function __invoke(Request $request, string $asset_category)
     {
         try {
+            CheckRolesAction::resolve()->execute('edit-asset-category');
+
             $data = $request->validate([
                 'name'        => ['required', 'string', 'max:255'],
                 'description' => ['nullable', 'string'],

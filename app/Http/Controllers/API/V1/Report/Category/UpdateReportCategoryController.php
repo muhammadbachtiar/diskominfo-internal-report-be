@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1\Report\Category;
 
+use Domain\Shared\Actions\CheckRolesAction;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -15,6 +16,8 @@ class UpdateReportCategoryController extends BaseController
     public function __invoke(Request $request, string $report_category)
     {
         try {
+            CheckRolesAction::resolve()->execute('edit-report-category');
+
             $data = $request->validate([
                 'name'        => ['required', 'string', 'max:255'],
                 'description' => ['nullable', 'string'],

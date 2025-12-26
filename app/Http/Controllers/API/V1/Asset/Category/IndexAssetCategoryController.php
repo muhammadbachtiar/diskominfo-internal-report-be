@@ -14,7 +14,7 @@ class IndexAssetCategoryController extends BaseController
     public function __invoke(Request $request)
     {
         try {
-            CheckRolesAction::resolve()->execute('view-asset-categories');
+            CheckRolesAction::resolve()->execute('view-asset-category');
 
             $query = AssetCategory::query();
 

@@ -15,7 +15,7 @@ class CreateReportCategoryController extends BaseController
     public function __invoke(Request $request)
     {
         try {
-            CheckRolesAction::resolve()->execute('manage-report-categories');
+            CheckRolesAction::resolve()->execute('add-report-category');
 
             $data = $request->validate([
                 'name' => ['required', 'string'],

@@ -12,7 +12,7 @@ class DetailAssetCategoryController extends BaseController
     public function __invoke( string $asset_category)
     {
         try {
-            CheckRolesAction::resolve()->execute('view-asset-categories');
+            CheckRolesAction::resolve()->execute('view-asset-category');
 
             $data = AssetCategory::where('id', $asset_category)->firstOrFail();
 

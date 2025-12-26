@@ -14,7 +14,7 @@ class IndexReportCategoryController extends BaseController
     public function __invoke(Request $request)
     {
         try {
-            CheckRolesAction::resolve()->execute('view-report-categories');
+            CheckRolesAction::resolve()->execute('view-report-category');
 
             $query = ReportCategory::query();
 

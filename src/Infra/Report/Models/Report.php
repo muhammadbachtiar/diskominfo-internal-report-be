@@ -66,8 +66,8 @@ class Report extends BaseModel
         return $this->hasMany(ReportAction::class)->orderBy('sequence');
     }
 
-    public function category(): BelongsTo
+    public function category()
     {
-        return $this->belongsTo(ReportCategory::class);
+        return $this->belongsTo(ReportCategory::class, 'category_id');
     }
 }

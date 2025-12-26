@@ -64,12 +64,24 @@ class PermissionSeeder extends Seeder
             ['function' => 'retire-asset', 'apps' => 'assets'],
             ['function' => 'attach-asset-report', 'apps' => 'assets'],
             ['function' => 'detach-asset-report', 'apps' => 'assets'],
+
+            // Asset Categories service
+            ['function' => 'view-asset-category', 'apps' => 'asset-categories'],
+            ['function' => 'add-asset-category', 'apps' => 'asset-categories'],
+            ['function' => 'edit-asset-category', 'apps' => 'asset-categories'],
+            ['function' => 'delete-asset-category', 'apps' => 'asset-categories'],
             
             // Locations service
             ['function' => 'view-location', 'apps' => 'locations'],
             ['function' => 'add-location', 'apps' => 'locations'],
             ['function' => 'edit-location', 'apps' => 'locations'],
             ['function' => 'delete-location', 'apps' => 'locations'],
+
+            // Report Categories service
+            ['function' => 'view-report-category', 'apps' => 'report-categories'],
+            ['function' => 'add-report-category', 'apps' => 'report-categories'],
+            ['function' => 'edit-report-category', 'apps' => 'report-categories'],
+            ['function' => 'delete-report-category', 'apps' => 'report-categories'],
             
             // Units service
             ['function' => 'add-unit', 'apps' => 'units'],
