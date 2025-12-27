@@ -14,6 +14,7 @@ class CreateReportController extends BaseController
     public function __invoke(Request $req)
     {
         try {
+            $this->authorize('create');
             $data = $req->validate([
                 'title' => 'required|string',
                 'description' => 'nullable|string',

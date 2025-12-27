@@ -14,7 +14,7 @@ class ReviewReportController extends BaseController
     public function __invoke(Report $report, Request $req)
     {
         try {
-            $this->authorize('review', $report);
+            $this->authorize('reviewReport', $report);
             $data = $req->validate([
                 'decision' => 'required|in:approve,reject,revision',
                 'note' => 'nullable|string',

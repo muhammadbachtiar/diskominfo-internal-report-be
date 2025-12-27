@@ -137,11 +137,15 @@ class ReportPolicy
 
     public function delete(User $user, Report $report): bool
     {
+        if ($this->isSuperadmin($user)) {
+            return true;
+        }
+
         if (!$this->isModifiable($report)) {
             return false;
         }
 
-        if ($this->isSuperadmin($user) || $this->isKadin($user)) {
+        if ($this->isKadin($user)) {
             return true;
         }
 
@@ -177,6 +181,28 @@ class ReportPolicy
     public function unassignAssetFromReport(User $user, Report $report): bool
     {
         return $this->assignAssetToReport($user, $report);
+    }
+
+    public function assignMemberToReport(User $user, Report $report): bool
+    {
+        if ($this->isSuperadmin($user) || $this->isKadin($user)) {
+            return true;
+        }
+
+        if ($this->isKabid($user)) {
+            return $this->isSameUnit($user, $report);
+        }
+
+        if ($this->isPegawai($user)) {
+            return $this->isCreator($user, $report);
+        }
+        
+        return false;
+    }
+
+    public function unassignMemberFromReport(User $user, Report $report): bool
+    {
+        return $this->assignMemberToReport($user, $report);
     }
 
     public function submitReport(User $user, Report $report): bool

@@ -15,7 +15,7 @@ class DetailReportController extends BaseController
     {
         try {
             $this->authorize('view', $report);
-      $data = GetReportDetailAction::resolve()->execute($report, $req->query());
+            $data = GetReportDetailAction::resolve()->execute($report, $req->query());
             return $this->resolveForSuccessResponseWith('Report', $data);
         } catch (ValidationException $th) {
             return $this->resolveForFailedResponseWith('Validation Error', $th->errors(), HttpStatus::UnprocessableEntity);

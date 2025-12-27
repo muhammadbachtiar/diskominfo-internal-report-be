@@ -13,7 +13,7 @@ class SubmitReportController extends BaseController
     public function __invoke(Report $report)
     {
         try {
-            $this->authorize('update', $report);
+            $this->authorize('submitReport', $report);
             $data = SubmitReportAction::resolve()->execute($report);
             return $this->resolveForSuccessResponseWith('Report submitted', $data);
         } catch (ValidationException $th) {

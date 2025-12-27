@@ -13,7 +13,7 @@ class RemoveAssigneeController extends BaseController
     public function __invoke(Report $report, int $user)
     {
         try {
-            $this->authorize('assign', $report);
+            $this->authorize('unassignMemberFromReport', $report);
             $res = RemoveAssigneeAction::resolve()->execute($report, $user);
             return $this->resolveForSuccessResponseWith('Assignee removed', $res->assignees);
         } catch (ValidationException $th) {

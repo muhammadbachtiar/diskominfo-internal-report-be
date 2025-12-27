@@ -13,7 +13,7 @@ class DeleteReportController extends BaseController
     public function __invoke(Report $report)
     {
         try {
-            $this->authorize('update', $report);
+            $this->authorize('delete', $report);
             DeleteReportAction::resolve()->execute($report);
             return $this->resolveForSuccessResponseWith('Deleted', null, HttpStatus::Ok);
         } catch (ValidationException $th) {
