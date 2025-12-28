@@ -238,16 +238,16 @@ class ReportPolicy
 
         return false;
     }
-
+    private function hasRole(User $user, string $role): bool
+    {
+        return (bool) $user->roles()->where('nama', $role)->exists();
+    }
+    
     private function isSuperadmin(User $user): bool
     {
         return $this->hasRole($user, 'admin');
     }
 
-    private function hasRole(User $user, string $role): bool
-    {
-        return $user->roles()->where('nama', $role)->exists();
-    }
 
     private function isKadin(User $user): bool
     {

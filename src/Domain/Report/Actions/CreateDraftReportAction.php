@@ -7,6 +7,7 @@ use Domain\Report\Services\GeoUtils;
 use Domain\Shared\Actions\CheckRolesAction;
 use Domain\Shared\Services\AuditLogger;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Infra\Report\Models\Report;
 use Infra\Shared\Foundations\Action;
 use Infra\Shared\Models\Unit;
@@ -19,7 +20,9 @@ class CreateDraftReportAction extends Action
         CheckRolesAction::resolve()->execute('create-report');
         $unitId = $input['unit_id'] ?? Auth::user()->unit_id;
         $number = $this->generateNumber($unitId);
-        $lat = $input['lat'] ?? null; $lng = $input['lng'] ?? null; $acc = $input['accuracy'] ?? null;
+        $lat = $input['lat'] ?? null;
+        $lng = $input['lng'] ?? null;
+        $acc = $input['accuracy'] ?? null;
         $geohash = ($lat && $lng) ? GeoUtils::geohash((float) $lat, (float) $lng, 9) : null;
         $report = Report::create([
             'id' => (string) Uuid::uuid7(),
@@ -46,7 +49,20 @@ class CreateDraftReportAction extends Action
     {
         $unitCode = optional(Unit::find($unitId))->code ?: 'UNIT';
         $year = date('Y');
-        $seq = str_pad((string) (Report::whereYear('created_at', $year)->count() + 1), 5, '0', STR_PAD_LEFT);
+
+        $seq = DB::transaction(function () use ($year) {
+            $lastReport = Report::withTrashed() 
+                ->whereYear('created_at', $year)
+                ->lockForUpdate()
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            return $lastReport ?
+                (int) substr($lastReport->number, -5) + 1 :
+                1;
+        });
+
+        $seq = str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
         return "LAP/{$unitCode}/{$year}/{$seq}";
     }
 }
