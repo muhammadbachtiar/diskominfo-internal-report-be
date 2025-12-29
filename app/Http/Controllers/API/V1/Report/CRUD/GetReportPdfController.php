@@ -2,26 +2,36 @@
 
 namespace App\Http\Controllers\API\V1\Report\CRUD;
 
+use Domain\Report\Actions\GetReportPdfAction;
 use Infra\Shared\Controllers\BaseController;
-use Illuminate\Support\Facades\Storage;
 use Infra\Report\Models\Report;
-use Infra\Report\Models\Signature;
 use Infra\Shared\Enums\HttpStatus;
 
 class GetReportPdfController extends BaseController
 {
     public function __invoke(Report $report)
     {
-        $sig = Signature::where('report_id', $report->id)->first();
-        $disk = config('filesystems.default');
-        $key = $sig?->signed_pdf_key;
-        if (! $key) {
-            return $this->resolveForFailedResponseWith(message:'PDF not available',status:HttpStatus::NotFound);
+        try {
+            $result = GetReportPdfAction::resolve()->execute($report);
+            
+            return response($result['content'], 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $result['filename'] . '"',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+            ]);
+        } catch (\RuntimeException $e) {
+            return $this->resolveForFailedResponseWith(
+                message: $e->getMessage(),
+                status: HttpStatus::BadRequest
+            );
+        } catch (\Throwable $e) {
+            return $this->resolveForFailedResponseWith(
+                message: 'Failed to retrieve PDF: ' . $e->getMessage(),
+                status: HttpStatus::InternalServerError
+            );
         }
-        $content = Storage::disk($disk)->get($key);
-        return response($content, 200, [
-            'Content-Type' => 'application/pdf',
-        ]);
     }
 }
 
