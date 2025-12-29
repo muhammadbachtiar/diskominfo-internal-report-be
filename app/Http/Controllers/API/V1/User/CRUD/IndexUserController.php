@@ -17,7 +17,7 @@ class IndexUserController extends BaseController
 
             if ($req->has('total_only') && $req->total_only === 'true') {
                 return $this->resolveForSuccessResponseWith(
-                    message: 'data roles',
+                    message: 'data user total',
                     data: $data
                 );
             }

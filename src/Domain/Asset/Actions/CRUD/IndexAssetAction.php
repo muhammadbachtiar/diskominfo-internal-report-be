@@ -15,7 +15,9 @@ class IndexAssetAction extends Action
     {
         CheckRolesAction::resolve()->execute('view-asset');
 
-        $query = Asset::query()->with(['unit', 'currentLoan', 'category']);
+        $query = Asset::query();
+
+        $this->handleWith($query, $filters);
 
         if ($status = Arr::get($filters, 'status')) {
             $query->where('status', $status);
@@ -25,12 +27,17 @@ class IndexAssetAction extends Action
             $query->where('unit_id', $unitId);
         }
 
-        if ($search = Arr::get($filters, 'q')) {
+        if ($categoryId = Arr::get($filters, 'category_id')) {
+            $query->where('category_id', $categoryId);
+        }
+
+        if ($search = Arr::get($filters, 'search')) {
             $query->where(function ($builder) use ($search) {
-                $builder->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('code', 'like', '%' . $search . '%')
-                    ->orWhere('category', 'like', '%' . $search . '%')
-                    ->orWhere('serial_number', 'like', '%' . $search . '%');
+                $pattern = '%' . $search . '%';
+                $builder->where('name', 'ilike', $pattern)
+                    ->orWhere('code', 'ilike', $pattern)
+                    ->orWhere('category', 'ilike', $pattern)
+                    ->orWhere('serial_number', 'ilike', $pattern);
             });
         }
 
@@ -43,5 +50,21 @@ class IndexAssetAction extends Action
 
         return $query->paginate($perPage, ['*'], 'page', $page ? max(1, (int) $page) : null);
     }
+
+    protected function handleWith($query, array $filters): void
+    {
+        $mandatoryRelations = ['currentLoan', 'category'];
+
+        $query->with($mandatoryRelations);
+
+        if ($with = Arr::get($filters, 'with')) {
+            $requestedRelations = is_string($with) ? explode(',', $with) : $with;
+
+            if (in_array('unit', $requestedRelations)) {
+                $query->with('unit');
+            }
+        }
+    }
+
 }
 
