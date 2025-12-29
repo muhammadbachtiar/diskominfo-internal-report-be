@@ -12,11 +12,18 @@ class GetReportDetailAction extends Action
     public function execute(Report $report, array $options = []): Report
     {
         CheckRolesAction::resolve()->execute('view-report');
+        
+        // Default includes
+        $defaultIncludes = ['approvals'];
+        $report->load($defaultIncludes);
+        
+        // Additional includes from request
         $allowedIncludes = config('report.report_allowed_includes', []);
         $includes = IncludeParser::parse($options['with'] ?? null, $allowedIncludes);
         if (!empty($includes)) {
             $report->load($includes);
         }
+        
         return $report;
     }
 }

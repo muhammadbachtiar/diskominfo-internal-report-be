@@ -347,7 +347,12 @@ paths:
           name: unit
           schema: { type: string, format: uuid }
         - in: query
-          name: q
+          name: category_id
+          description: Filter by report category ID
+          schema: { type: string, format: uuid }
+        - in: query
+          name: search
+          description: Search in title, number, category, and description (case-insensitive, matches anywhere in text)
           schema: { type: string }
         - in: query
           name: from

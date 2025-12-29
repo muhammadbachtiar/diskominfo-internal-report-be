@@ -13,7 +13,6 @@ class SyncAssigneesAction extends Action
     public function execute(Report $report, array $userIds): Report
     {
         CheckRolesAction::resolve()->execute('manage-assignees');
-        // Validate users belong to same unit as report
         $invalid = User::whereIn('id', $userIds)
             ->where(function ($q) use ($report) {
                 $q->whereNull('unit_id')->orWhere('unit_id', '!=', $report->unit_id);

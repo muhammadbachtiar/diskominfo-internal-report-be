@@ -26,6 +26,11 @@ class CreateReportController extends BaseController
                 'event_at' => 'nullable|date',
                 'unit_id' => 'nullable|uuid',
                 'category_id' => 'nullable|uuid',
+                'user_ids' => 'nullable|array',
+                'user_ids.*' => 'integer|exists:users,id',
+                'asset_ids' => 'nullable|array',
+                'asset_ids.*.asset_id' => 'required|uuid|exists:assets,id',
+                'asset_ids.*.note' => 'nullable|string',
             ]);
             $report = CreateDraftReportAction::resolve()->execute($data);
             return $this->resolveForSuccessResponseWith('Draft created', $report, HttpStatus::Created);

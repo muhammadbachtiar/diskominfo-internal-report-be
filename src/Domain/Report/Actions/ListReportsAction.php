@@ -24,7 +24,7 @@ class ListReportsAction extends Action
         if (! empty($includes)) {
             $query->with($includes);
         }
-        // RBAC scoping for list
+
         $user = Auth::user();
         $roleNames = $user->roles()->pluck('nama')->toArray();
         $isAdmin = in_array('admin', $roleNames, true);
@@ -44,16 +44,16 @@ class ListReportsAction extends Action
         }
         if (!empty(Arr::get($filters, 'status'))) $query=$query->where('status', Arr::get($filters, 'status'));
         if (!empty(Arr::get($filters, 'unit'))) $query=$query->where('unit_id', Arr::get($filters, 'unit'));
-        $search = Arr::get($filters, 'search', Arr::get($filters, 'q'));
+        if (!empty(Arr::get($filters, 'category_id'))) $query=$query->where('category_id', Arr::get($filters, 'category_id'));
+        
+        $search = Arr::get($filters, 'search', Arr::get($filters, 'search'));
         if (!empty($search)) {
-            $prefix = rtrim($search, '%');
-            $query = $query->where(function($q) use ($search, $prefix) {
-                // Prefix match to enable index usage where possible
-                $q->where('title', 'like', '%'.$prefix.'%')
-                  ->orWhere('number', 'like', '%'.$prefix.'%')
-                  ->orWhere('category', 'like', '%'.$prefix.'%')
-                  // Description can stay contains due to free text
-                  ->orWhere('description', 'like', '%'.$search.'%');
+            $pattern = '%' . $search . '%';
+            $query = $query->where(function($q) use ($pattern) {
+                $q->where('title', 'ilike', $pattern)
+                  ->orWhere('number', 'ilike', $pattern)
+                  ->orWhere('category', 'ilike', $pattern)
+                  ->orWhere('description', 'ilike', $pattern);
             });
         }
         if (!empty(Arr::get($filters, 'from'))) $query = $query->whereDate('created_at', '>=', Arr::get($filters, 'from'));

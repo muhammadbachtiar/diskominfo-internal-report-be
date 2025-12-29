@@ -16,10 +16,7 @@ class ReviewReportAction extends Action
 {
     public function execute(Report $report, string $decision, ?string $note = null): Report
     {
-        $approval = Approval::where('report_id', $report->id)->latest()->first();
-        if (! $approval) {
-            $approval = new Approval(['report_id' => $report->id, 'approver_id' => request()->user()->id]);
-        }
+        $approval = new Approval(['report_id' => $report->id, 'approver_id' => request()->user()->id]);
         $approval->status = match ($decision) {
             'approve' => ApprovalStatus::Approved->value,
             'reject' => ApprovalStatus::Rejected->value,
@@ -40,7 +37,6 @@ class ReviewReportAction extends Action
         AuditLogger::log('report.review', 'reports', $report->id, ['status' => $report->status]);
 
         if ($approval->status === 'approved') {
-            // Dispatch jobs for PDF and signature
             GeneratePdfJob::dispatch($report->id);
         }
 

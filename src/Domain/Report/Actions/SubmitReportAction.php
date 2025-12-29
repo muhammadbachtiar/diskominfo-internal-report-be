@@ -13,19 +13,19 @@ use Infra\Shared\Foundations\Action;
 
 class SubmitReportAction extends Action
 {
-    public function execute(Report $report): Report
+    public function execute(Report $report, ?string $note = null): Report
     {
         CheckRolesAction::resolve()->execute('submit-report');
         $report->update(['status' => ReportStatus::Submitted->value]);
         AuditLogger::log('report.submit', 'reports', $report->id);
 
-        // Create pending approval for Kabid (approver selection is business logic; placeholder null approver)
         $approval = Approval::create([
             'report_id' => $report->id,
-            'approver_id' => request()->user()->id, // Replace with real Kabid selection
+            'approver_id' => request()->user()->id,
             'status' => ApprovalStatus::Pending->value,
+            'note' => $note,
         ]);
-        // Notify Kabid (placeholder approver)
+
         SendAppNotificationAction::resolve()->execute($approval->approver_id, [
             'type' => 'report_submitted',
             'report_id' => (string) $report->id,
