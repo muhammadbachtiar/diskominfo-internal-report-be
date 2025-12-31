@@ -57,4 +57,9 @@ class Asset extends BaseModel
             ->withPivot('note')
             ->withTimestamps();
     }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(AssetAttachment::class);
+    }
 }

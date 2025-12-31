@@ -1,5 +1,12 @@
 <?php
 
+use App\Http\Controllers\API\V1\Asset\Attachment\DeleteAttachmentController;
+use App\Http\Controllers\API\V1\Asset\Attachment\DetailAttachmentController;
+use App\Http\Controllers\API\V1\Asset\Attachment\DownloadAttachmentController;
+use App\Http\Controllers\API\V1\Asset\Attachment\FinalizeAttachmentController;
+use App\Http\Controllers\API\V1\Asset\Attachment\IndexAttachmentController;
+use App\Http\Controllers\API\V1\Asset\Attachment\PresignAttachmentController;
+use App\Http\Controllers\API\V1\Asset\Attachment\UpdateAttachmentController;
 use App\Http\Controllers\API\V1\Asset\Category\CreateAssetCategoryController;
 use App\Http\Controllers\API\V1\Asset\Category\IndexAssetCategoryController;
 use App\Http\Controllers\API\V1\Asset\Category\DeleteAssetCategoryController;
@@ -157,6 +164,24 @@ Route::prefix('assets')->middleware(['auth:api'])->group(function () {
         Route::post('maintenance/complete', CompleteAssetMaintenanceController::class);
         Route::post('retire', RetireAssetController::class);
         Route::post('reports/{report}', AttachAssetToReportController::class);
+        
+        // Asset Attachments routes
+        Route::prefix('attachments')->group(function () {
+            Route::get('', IndexAttachmentController::class);
+            Route::post('presign', PresignAttachmentController::class);
+            Route::post('finalize', FinalizeAttachmentController::class);
+        });
+    });
+});
+
+// Asset Attachment routes (outside asset context)
+Route::prefix('attachments')->middleware(['auth:api'])->group(function () {
+    Route::prefix('{attachment}')->group(function () {
+        Route::get('', DetailAttachmentController::class);
+        Route::put('', UpdateAttachmentController::class);
+        Route::patch('', UpdateAttachmentController::class);
+        Route::delete('', DeleteAttachmentController::class);
+        Route::get('download', DownloadAttachmentController::class);
     });
 });
 

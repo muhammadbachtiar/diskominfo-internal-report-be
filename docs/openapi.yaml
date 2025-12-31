@@ -71,7 +71,11 @@ components:
         lat: { type: number, nullable: true }
         lng: { type: number, nullable: true }
         accuracy: { type: number, nullable: true }
-        status: { type: string, enum: [draft, submitted, review, revision, approved, rejected] }
+        status:
+          {
+            type: string,
+            enum: [draft, submitted, review, revision, approved, rejected],
+          }
         unit_id: { type: string, format: uuid }
         created_by: { type: integer }
         created_at: { type: string, format: date-time }
@@ -83,7 +87,11 @@ components:
         report_id: { type: string, format: uuid }
         type: { type: string, enum: [photo] }
         original_name: { type: string }
-        mime: { type: string, enum: [image/jpeg, image/png, image/heic, image/heif] }
+        mime:
+          {
+            type: string,
+            enum: [image/jpeg, image/png, image/heic, image/heif],
+          }
         size: { type: integer }
         object_key: { type: string }
         checksum: { type: string }
@@ -92,7 +100,8 @@ components:
         accuracy: { type: number }
         geohash: { type: string }
         phash: { type: string }
-        scan_status: { type: string, enum: [clean, infected, failed], nullable: true }
+        scan_status:
+          { type: string, enum: [clean, infected, failed], nullable: true }
         uploaded_by: { type: integer }
         created_at: { type: string, format: date-time }
         url:
@@ -120,8 +129,10 @@ components:
         cert_subject: { type: string, nullable: true }
         cert_serial: { type: string, nullable: true }
         signed_at: { type: string, format: date-time, nullable: true }
-        ocsp_status: { type: object, additionalProperties: true, nullable: true }
-        tsa_timestamp: { type: object, additionalProperties: true, nullable: true }
+        ocsp_status:
+          { type: object, additionalProperties: true, nullable: true }
+        tsa_timestamp:
+          { type: object, additionalProperties: true, nullable: true }
         pdf_hash: { type: string, nullable: true }
     Notification:
       type: object
@@ -206,7 +217,8 @@ components:
         id: { type: string, format: uuid }
         name: { type: string }
         code: { type: string }
-        status: { type: string, enum: [available, borrowed, maintenance, retired] }
+        status:
+          { type: string, enum: [available, borrowed, maintenance, retired] }
         category: { type: string, nullable: true }
         serial_number: { type: string, nullable: true }
         purchase_price:
@@ -243,10 +255,52 @@ components:
       properties:
         id: { type: string, format: uuid }
         asset_id: { type: string, format: uuid }
-        status_key: { type: string, enum: [available, borrowed, maintenance, retired] }
+        status_key:
+          { type: string, enum: [available, borrowed, maintenance, retired] }
         changed_at: { type: string, format: date-time }
         changed_by: { type: integer, nullable: true }
         note: { type: string, nullable: true }
+    AssetAttachment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        asset_id: { type: string, format: uuid }
+        original_name: { type: string }
+        mime: { type: string }
+        size: { type: integer, description: File size in bytes }
+        object_key: { type: string }
+        checksum: { type: string, description: SHA-256 checksum }
+        category:
+          {
+            type: string,
+            enum: [manual, warranty, invoice, photo, other],
+            nullable: true,
+          }
+        tags: { type: array, items: { type: string }, nullable: true }
+        width:
+          { type: integer, nullable: true, description: Image width in pixels }
+        height:
+          { type: integer, nullable: true, description: Image height in pixels }
+        scan_status:
+          {
+            type: string,
+            enum: [pending, clean, infected, failed],
+            nullable: true,
+          }
+        scan_result:
+          { type: object, additionalProperties: true, nullable: true }
+        uploaded_by: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        deleted_at: { type: string, format: date-time, nullable: true }
+        url:
+          type: string
+          format: uri
+          nullable: true
+          description: Temporary download URL (5 minutes expiry)
+        human_file_size:
+          type: string
+          description: Human-readable file size (e.g., "2.5 MB")
     AssetCreateRequest:
       type: object
       required: [name, code]
@@ -301,6 +355,81 @@ components:
       type: object
       properties:
         note: { type: string, nullable: true }
+    AssetAttachmentPresignRequest:
+      type: object
+      properties:
+        original_name:
+          type: string
+          nullable: true
+          description: Original filename supplied by the client
+        mime:
+          type: string
+          nullable: true
+          description: MIME type of the file
+          enum:
+            [
+              image/jpeg,
+              image/png,
+              image/webp,
+              application/pdf,
+              application/msword,
+              application/vnd.openxmlformats-officedocument.wordprocessingml.document,
+            ]
+        size:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Optional file size hint in bytes for validation (max 16MB)
+    AssetAttachmentFinalizeRequest:
+      type: object
+      required: [object_key, original_name, mime, size]
+      properties:
+        object_key:
+          type: string
+          description: Object key returned by presign after upload
+        original_name:
+          type: string
+          description: Original filename
+        mime:
+          type: string
+          description: MIME type of the uploaded file
+        size:
+          type: integer
+          minimum: 1
+          description: File size in bytes
+        checksum:
+          type: string
+          nullable: true
+          description: SHA-256 checksum for duplicate detection
+        category:
+          type: string
+          enum: [manual, warranty, invoice, photo, other]
+          nullable: true
+          description: File category
+        tags:
+          type: array
+          items: { type: string }
+          nullable: true
+          description: Tags for categorization
+        width:
+          type: integer
+          nullable: true
+          description: Image width in pixels (for images)
+        height:
+          type: integer
+          nullable: true
+          description: Image height in pixels (for images)
+    AssetAttachmentUpdateRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          enum: [manual, warranty, invoice, photo, other]
+          nullable: true
+        tags:
+          type: array
+          items: { type: string }
+          nullable: true
     LoginRequest:
       type: object
       required:
@@ -342,7 +471,11 @@ paths:
           schema: { type: integer, minimum: 1, default: 10 }
         - in: query
           name: status
-          schema: { type: string, enum: [draft, submitted, review, revision, approved, rejected] }
+          schema:
+            {
+              type: string,
+              enum: [draft, submitted, review, revision, approved, rejected],
+            }
         - in: query
           name: unit
           schema: { type: string, format: uuid }
@@ -361,7 +494,15 @@ paths:
           name: to
           schema: { type: string, format: date }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     post:
       tags: [Reports]
       operationId: createReport
@@ -384,7 +525,15 @@ paths:
                 event_at: { type: string, format: date-time }
                 unit_id: { type: string, format: uuid }
       responses:
-        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "201":
+          {
+            description: Created,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /reports/export:
     get:
       tags: [Reports]
@@ -395,11 +544,12 @@ paths:
           name: format
           schema: { type: string, enum: [csv, xlsx], default: csv }
       responses:
-        '200':
+        "200":
           description: Export file
           content:
             text/csv: { schema: { type: string, format: binary } }
-            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet: { schema: { type: string, format: binary } }
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              { schema: { type: string, format: binary } }
   /reports/{id}:
     get:
       tags: [Reports]
@@ -416,7 +566,15 @@ paths:
           Allowed: evidences,creator,user,assignees,approvals,signature,comments,unit,assets
           schema: { type: string }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     put:
       tags: [Reports]
       operationId: updateReport
@@ -442,7 +600,15 @@ paths:
                 accuracy: { type: number }
                 event_at: { type: string, format: date-time }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     delete:
       tags: [Reports]
       operationId: deleteReport
@@ -453,7 +619,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /reports/{id}/evidences/presign:
     post:
       tags: [Evidences]
@@ -468,9 +642,17 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/EvidencePresignRequest' }
+            schema: { $ref: "#/components/schemas/EvidencePresignRequest" }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /reports/{id}/evidences/finalize:
     post:
       tags: [Evidences]
@@ -485,9 +667,17 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/EvidenceFinalizeRequest' }
+            schema: { $ref: "#/components/schemas/EvidenceFinalizeRequest" }
       responses:
-        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "201":
+          {
+            description: Created,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /reports/{id}/assignees:
     post:
       tags: [Reports]
@@ -510,7 +700,15 @@ paths:
                   type: array
                   items: { type: integer }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /reports/{id}/assignees/{userId}:
     delete:
       tags: [Reports]
@@ -526,7 +724,15 @@ paths:
           required: true
           schema: { type: integer }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /reports/{id}/assets:
     get:
       tags: [Reports]
@@ -538,7 +744,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /reports/{id}/assets/{assetId}:
     delete:
       tags: [Reports]
@@ -554,7 +768,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /reports/{id}/evidences/{evidenceId}:
     get:
       tags: [Evidences]
@@ -570,7 +792,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     delete:
       tags: [Evidences]
       operationId: deleteEvidence
@@ -585,7 +815,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /reports/{id}/submit:
     post:
       tags: [Approvals]
@@ -597,7 +835,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /reports/{id}/review:
     post:
       tags: [Approvals]
@@ -612,9 +858,17 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/ReviewDecision' }
+            schema: { $ref: "#/components/schemas/ReviewDecision" }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /reports/{id}/pdf:
     get:
       tags: [Reports]
@@ -626,8 +880,13 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: PDF, content: { application/pdf: { schema: { type: string, format: binary } } } }
-        '404': { description: Not found }
+        "200":
+          {
+            description: PDF,
+            content:
+              { application/pdf: { schema: { type: string, format: binary } } },
+          }
+        "404": { description: Not found }
   /login:
     post:
       tags: [Auth]
@@ -637,15 +896,31 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/LoginRequest' }
+            schema: { $ref: "#/components/schemas/LoginRequest" }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /auth:
     get:
       tags: [Auth]
       summary: Get current user data
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     put:
       tags: [Auth]
       summary: Update current user profile
@@ -660,7 +935,15 @@ paths:
                 email: { type: string, format: email }
                 password: { type: string, format: password }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     patch:
       tags: [Auth]
       summary: Partially update current user profile
@@ -675,7 +958,15 @@ paths:
                 email: { type: string, format: email }
                 password: { type: string, format: password }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /upload:
     post:
       tags: [Storage]
@@ -689,7 +980,15 @@ paths:
               properties:
                 upload: { type: string, format: binary }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /user:
     get:
       tags: [Users]
@@ -709,7 +1008,15 @@ paths:
           description: If 'yes', returns up to 100 items without pagination
           schema: { type: string, enum: [yes] }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     post:
       tags: [Users]
       summary: Create user
@@ -726,7 +1033,15 @@ paths:
                 password: { type: string, format: password }
                 roles: { type: array, items: { type: integer }, nullable: true }
       responses:
-        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "201":
+          {
+            description: Created,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /user/{id}:
     get:
       tags: [Users]
@@ -737,7 +1052,15 @@ paths:
           required: true
           schema: { type: integer }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     put:
       tags: [Users]
       summary: Update user
@@ -758,7 +1081,15 @@ paths:
                 password: { type: string, format: password }
                 roles: { type: array, items: { type: integer }, nullable: true }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     patch:
       tags: [Users]
       summary: Partially update user
@@ -779,7 +1110,15 @@ paths:
                 password: { type: string, format: password }
                 roles: { type: array, items: { type: integer }, nullable: true }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     delete:
       tags: [Users]
       summary: Delete user
@@ -789,7 +1128,15 @@ paths:
           required: true
           schema: { type: integer }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /assets:
     get:
       tags: [Assets]
@@ -798,7 +1145,8 @@ paths:
       parameters:
         - in: query
           name: status
-          schema: { type: string, enum: [available, borrowed, maintenance, retired] }
+          schema:
+            { type: string, enum: [available, borrowed, maintenance, retired] }
         - in: query
           name: unit_id
           schema: { type: string, format: uuid }
@@ -815,7 +1163,15 @@ paths:
           name: page_size
           schema: { type: integer, minimum: 1, default: 10 }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     post:
       tags: [Assets]
       operationId: createAsset
@@ -824,9 +1180,17 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/AssetCreateRequest' }
+            schema: { $ref: "#/components/schemas/AssetCreateRequest" }
       responses:
-        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "201":
+          {
+            description: Created,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /assets/{id}:
     get:
       tags: [Assets]
@@ -838,7 +1202,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     put:
       tags: [Assets]
       operationId: updateAsset
@@ -852,9 +1224,17 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/AssetUpdateRequest' }
+            schema: { $ref: "#/components/schemas/AssetUpdateRequest" }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     delete:
       tags: [Assets]
       operationId: deleteAsset
@@ -865,7 +1245,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /assets/{id}/activate:
     post:
       tags: [Assets]
@@ -880,9 +1268,17 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/AssetActivateRequest' }
+            schema: { $ref: "#/components/schemas/AssetActivateRequest" }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /assets/{id}/deactivate:
     post:
       tags: [Assets]
@@ -897,9 +1293,17 @@ paths:
         required: false
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/AssetDeactivateRequest' }
+            schema: { $ref: "#/components/schemas/AssetDeactivateRequest" }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /assets/{id}/maintenance:
     post:
       tags: [Assets]
@@ -914,9 +1318,18 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/AssetMaintenanceStartRequest' }
+            schema:
+              { $ref: "#/components/schemas/AssetMaintenanceStartRequest" }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /assets/{id}/maintenance/complete:
     post:
       tags: [Assets]
@@ -931,9 +1344,18 @@ paths:
         required: false
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/AssetMaintenanceCompleteRequest' }
+            schema:
+              { $ref: "#/components/schemas/AssetMaintenanceCompleteRequest" }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /assets/{id}/retire:
     post:
       tags: [Assets]
@@ -948,9 +1370,17 @@ paths:
         required: false
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/AssetRetireRequest' }
+            schema: { $ref: "#/components/schemas/AssetRetireRequest" }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /assets/{id}/reports/{reportId}:
     post:
       tags: [Assets]
@@ -969,9 +1399,237 @@ paths:
         required: false
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/AssetAttachRequest' }
+            schema: { $ref: "#/components/schemas/AssetAttachRequest" }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
+  /assets/{id}/attachments:
+    get:
+      tags: [Asset Attachments]
+      operationId: listAssetAttachments
+      summary: List attachments for an asset
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: category
+          schema:
+            { type: string, enum: [manual, warranty, invoice, photo, other] }
+        - in: query
+          name: tags
+          description: Comma-separated tags to filter by
+          schema: { type: string }
+        - in: query
+          name: scan_status
+          schema: { type: string, enum: [pending, clean, infected, failed] }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: page_size
+          schema: { type: integer, minimum: 1, default: 10 }
+      responses:
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
+  /assets/{id}/attachments/presign:
+    post:
+      tags: [Asset Attachments]
+      operationId: presignAssetAttachment
+      summary: Generate presigned URL for attachment upload
+      description: |
+        Step 1 of 2-step upload process. Returns a presigned S3 URL for direct client upload.
+        After uploading to S3, call the finalize endpoint to complete the process.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              { $ref: "#/components/schemas/AssetAttachmentPresignRequest" }
+      responses:
+        "200":
+          description: Presigned URL generated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          url:
+                            {
+                              type: string,
+                              format: uri,
+                              description: Presigned S3 upload URL,
+                            }
+                          object_key:
+                            {
+                              type: string,
+                              description: Object key to use in finalize request,
+                            }
+                          expires_at:
+                            {
+                              type: integer,
+                              description: Unix timestamp when URL expires,
+                            }
+  /assets/{id}/attachments/finalize:
+    post:
+      tags: [Asset Attachments]
+      operationId: finalizeAssetAttachment
+      summary: Finalize attachment upload
+      description: |
+        Step 2 of 2-step upload process. Call this after successfully uploading to S3
+        using the presigned URL. This creates the database record.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              { $ref: "#/components/schemas/AssetAttachmentFinalizeRequest" }
+      responses:
+        "201":
+          {
+            description: Attachment created successfully,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
+        "400":
+          {
+            description: Bad request (file too large,
+            duplicate,
+            or asset storage limit exceeded),
+          }
+  /attachments/{id}:
+    get:
+      tags: [Asset Attachments]
+      operationId: getAssetAttachment
+      summary: Get attachment details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
+    put:
+      tags: [Asset Attachments]
+      operationId: updateAssetAttachment
+      summary: Update attachment metadata
+      description: Update category and tags. File content cannot be changed.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              { $ref: "#/components/schemas/AssetAttachmentUpdateRequest" }
+      responses:
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
+    delete:
+      tags: [Asset Attachments]
+      operationId: deleteAssetAttachment
+      summary: Delete attachment (soft delete)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
+  /attachments/{id}/download:
+    get:
+      tags: [Asset Attachments]
+      operationId: downloadAssetAttachment
+      summary: Get temporary download URL
+      description: Returns a presigned S3 URL valid for 5 minutes
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Download URL generated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          url:
+                            {
+                              type: string,
+                              format: uri,
+                              description: Temporary download URL (5 min expiry),
+                            }
+                          expires_at:
+                            {
+                              type: integer,
+                              description: Unix timestamp when URL expires,
+                            }
   /roles:
     get:
       tags: [Roles]
@@ -987,7 +1645,15 @@ paths:
           name: search
           schema: { type: string }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     post:
       tags: [Roles]
       summary: Create role
@@ -1000,9 +1666,18 @@ paths:
               required: [nama]
               properties:
                 nama: { type: string }
-                permission_ids: { type: array, items: { type: integer }, nullable: true }
+                permission_ids:
+                  { type: array, items: { type: integer }, nullable: true }
       responses:
-        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "201":
+          {
+            description: Created,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /roles/{id}:
     get:
       tags: [Roles]
@@ -1013,7 +1688,15 @@ paths:
           required: true
           schema: { type: integer }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /units:
     get:
       tags: [Units]
@@ -1034,7 +1717,15 @@ paths:
           description: If 'yes', returns up to 100 items without pagination
           schema: { type: string, enum: [yes] }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     post:
       tags: [Units]
       operationId: createUnit
@@ -1050,7 +1741,15 @@ paths:
                 name: { type: string }
                 code: { type: string }
       responses:
-        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "201":
+          {
+            description: Created,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /units/{id}:
     get:
       tags: [Units]
@@ -1062,7 +1761,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     put:
       tags: [Units]
       operationId: updateUnit
@@ -1082,7 +1789,15 @@ paths:
                 name: { type: string }
                 code: { type: string }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     patch:
       tags: [Units]
       operationId: patchUnit
@@ -1102,7 +1817,15 @@ paths:
                 name: { type: string }
                 code: { type: string }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     delete:
       tags: [Units]
       operationId: deleteUnit
@@ -1113,19 +1836,43 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /permission:
     get:
       tags: [Permissions]
       summary: List permissions
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /permission/apps:
     get:
       tags: [Permissions]
       summary: List permission apps
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /notifications:
     get:
       tags: [Notifications]
@@ -1143,14 +1890,30 @@ paths:
           description: If 'yes', returns up to 100 items without pagination
           schema: { type: string, enum: [yes] }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /notifications/read-all:
     post:
       tags: [Notifications]
       operationId: markAllRead
       summary: Mark all my notifications as read
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /notifications/{notificationId}/read:
     post:
       tags: [Notifications]
@@ -1162,7 +1925,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
 
   /locations:
     get:
@@ -1180,7 +1951,15 @@ paths:
           name: search
           schema: { type: string }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     post:
       tags: [Locations]
       operationId: createLocation
@@ -1198,7 +1977,15 @@ paths:
                 lat: { type: number, format: double }
                 long: { type: number, format: double }
       responses:
-        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "201":
+          {
+            description: Created,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
 
   /locations/{id}:
     get:
@@ -1211,7 +1998,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     put:
       tags: [Locations]
       operationId: updateLocation
@@ -1233,7 +2028,15 @@ paths:
                 lat: { type: number, format: double }
                 long: { type: number, format: double }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     delete:
       tags: [Locations]
       operationId: deleteLocation
@@ -1244,7 +2047,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
 
   /asset-categories:
     get:
@@ -1262,7 +2073,15 @@ paths:
           name: search
           schema: { type: string }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     post:
       tags: [Categories]
       operationId: createAssetCategory
@@ -1278,7 +2097,15 @@ paths:
                 name: { type: string }
                 description: { type: string }
       responses:
-        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "201":
+          {
+            description: Created,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
 
   /asset-categories/{id}:
     get:
@@ -1291,7 +2118,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     put:
       tags: [Categories]
       operationId: updateAssetCategory
@@ -1311,7 +2146,15 @@ paths:
                 name: { type: string }
                 description: { type: string }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     delete:
       tags: [Categories]
       operationId: deleteAssetCategory
@@ -1322,7 +2165,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
 
   /report-categories:
     get:
@@ -1340,7 +2191,15 @@ paths:
           name: search
           schema: { type: string }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     post:
       tags: [Categories]
       operationId: createReportCategory
@@ -1356,7 +2215,15 @@ paths:
                 name: { type: string }
                 description: { type: string }
       responses:
-        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "201":
+          {
+            description: Created,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
 
   /report-categories/{id}:
     get:
@@ -1369,7 +2236,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     put:
       tags: [Categories]
       operationId: updateReportCategory
@@ -1389,7 +2264,15 @@ paths:
                 name: { type: string }
                 description: { type: string }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
     delete:
       tags: [Categories]
       operationId: deleteReportCategory
@@ -1400,7 +2283,15 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
 
   /verify:
     get:
@@ -1415,18 +2306,30 @@ paths:
           name: hash
           schema: { type: string }
       responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Envelope' } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Envelope" } },
+              },
+          }
   /health:
     get:
       tags: [System]
       operationId: health
       summary: Healthcheck
       responses:
-        '200': { description: OK }
+        "200": { description: OK }
   /metrics:
     get:
       tags: [System]
       operationId: metrics
       summary: Metrics (text/plain)
       responses:
-        '200': { description: OK, content: { text/plain: { schema: { type: string } } } }
+        "200":
+          {
+            description: OK,
+            content: { text/plain: { schema: { type: string } } },
+          }

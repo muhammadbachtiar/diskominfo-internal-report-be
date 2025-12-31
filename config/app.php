@@ -170,6 +170,7 @@ return [
         App\Providers\RouteServiceProvider::class,
         App\Providers\TteServiceProvider::class,
         App\Providers\AwsServiceProvider::class,
+        App\Providers\AssetAttachmentServiceProvider::class,
     ])->toArray(),
 
     /*

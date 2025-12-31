@@ -14,7 +14,16 @@ class DetailAssetAction extends Action
         CheckRolesAction::resolve()->execute('view-asset');
 
         $asset = Asset::query()
-            ->with(['unit', 'currentLoan.borrower', 'maintenances', 'statusHistories.actor'])
+            ->with([
+                'unit',
+                'currentLoan.borrower',
+                'maintenances',
+                'statusHistories.actor',
+                'attachments' => function ($query) {
+                    $query->with('uploader:id,name,email')
+                        ->orderBy('created_at', 'desc');
+                },
+            ])
             ->find($assetId);
 
         if (! $asset) {
