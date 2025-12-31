@@ -16,7 +16,8 @@ class Approval extends BaseModel
 
     public function approver()
     {
-        return $this->belongsTo(User::class, 'approver_id');
+        return $this->belongsTo(User::class, 'approver_id')
+            ->select(['id', 'name', 'email']);
     }
 }
 

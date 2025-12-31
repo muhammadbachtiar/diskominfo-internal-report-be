@@ -14,7 +14,7 @@ class GetReportDetailAction extends Action
         CheckRolesAction::resolve()->execute('view-report');
         
         // Default includes
-        $defaultIncludes = ['approvals'];
+        $defaultIncludes = ['approvals.approver'];
         $report->load($defaultIncludes);
         
         // Additional includes from request
