@@ -20,7 +20,17 @@ class IndexAssetAction extends Action
         $this->handleWith($query, $filters);
 
         if ($status = Arr::get($filters, 'status')) {
-            $query->where('status', $status);
+            if (in_array($status, ['maintenance', 'retired'])) {
+                $query->where('status', $status);
+            } elseif ($status === 'available') {
+                $query->whereNull('location_id');
+            } elseif ($status === 'borrowed') {
+                $query->whereNotNull('location_id');
+            }
+        }
+
+        if ($locationId = Arr::get($filters, 'location_id')) {
+            $query->where('location_id', $locationId);
         }
 
         if ($unitId = Arr::get($filters, 'unit_id')) {
@@ -29,6 +39,14 @@ class IndexAssetAction extends Action
 
         if ($categoryId = Arr::get($filters, 'category_id')) {
             $query->where('category_id', $categoryId);
+        }
+
+        if ($fromYear = Arr::get($filters, 'from')) {
+            $query->whereYear('purchased_at', '>=', $fromYear);
+        }
+
+        if ($toYear = Arr::get($filters, 'to')) {
+            $query->whereYear('purchased_at', '<=', $toYear);
         }
 
         if ($search = Arr::get($filters, 'search')) {
