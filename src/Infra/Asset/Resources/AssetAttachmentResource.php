@@ -57,25 +57,8 @@ class AssetAttachmentResource extends JsonResource
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
             
-            // Optional download URL
-            'download_url' => $this->when(
-                $request->get('include_download_url'),
-                fn() => $this->generateDownloadUrl()
-            ),
+            // Temporary download URL (automatically generated via accessor)
+            'url' => $this->url,
         ];
-    }
-
-    private function generateDownloadUrl(): string
-    {
-        $disk = config('filesystems.default');
-        
-        try {
-            return Storage::disk($disk)->temporaryUrl(
-                $this->object_key,
-                now()->addMinutes(5)
-            );
-        } catch (\Exception $e) {
-            return '';
-        }
     }
 }

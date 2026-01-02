@@ -24,6 +24,8 @@ class AssetAttachment extends BaseModel
         'tags' => 'array',
     ];
 
+    protected $appends = ['url'];
+
     protected $fillable = [
         'asset_id',
         'uploaded_by',
@@ -114,5 +116,36 @@ class AssetAttachment extends BaseModel
     public function hasScanThreats(): bool
     {
         return $this->is_scanned && $this->scan_status === 'infected';
+    }
+
+    /**
+     * Get temporary URL for the attachment
+     * Follows the same pattern as Evidence model
+     */
+    public function getUrlAttribute(): ?string
+    {
+        if (! $this->object_key) {
+            return null;
+        }
+
+        // Use asset config or fallback to 15 minutes (900 seconds)
+        $ttl = (int) config('asset.attachment.presign_ttl', 900);
+        if ($ttl <= 0) {
+            $ttl = 900;
+        }
+
+        $adapter = \Illuminate\Support\Facades\Storage::disk('s3');
+
+        try {
+            return $adapter->temporaryUrl($this->object_key, now()->addSeconds($ttl));
+        } catch (\Throwable) {
+            // Fallback when temporary URLs are not supported by the disk/driver
+        }
+
+        try {
+            return $adapter->url($this->object_key);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }
