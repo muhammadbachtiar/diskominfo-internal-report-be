@@ -16,6 +16,7 @@ return [
         'user',
         'assignees',
         'approvals',
+        'assignees.unit',
         'signature',
         'comments',
         'unit',

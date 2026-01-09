@@ -16,6 +16,7 @@ class DetailAssetAction extends Action
         $asset = Asset::query()
             ->with([
                 'unit',
+                'category',
                 'currentLoan.borrower',
                 'maintenances',
                 'statusHistories.actor',

@@ -30,8 +30,6 @@ class UserSeeder extends Seeder
         $super = Roles::firstOrCreate(['nama' => 'Super Admin']);
         $admin = Roles::firstOrCreate(['nama' => 'admin']);
         $kadin = Roles::firstOrCreate(['nama' => 'kadin']);
-        $kabid = Roles::firstOrCreate(['nama' => 'kabid']);
-        $pegawai = Roles::firstOrCreate(['nama' => 'pegawai']);
 
         UserRoles::firstOrCreate(['user_id' => $superAdminUser->id, 'roles_id' => $super->id]);
         UserRoles::firstOrCreate(['user_id' => $superAdminUser->id, 'roles_id' => $admin->id]);

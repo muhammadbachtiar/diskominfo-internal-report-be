@@ -14,6 +14,8 @@ class SyncAssigneesAction extends Action
     public function execute(Report $report, array $userIds): Report
     {
         CheckRolesAction::resolve()->execute('manage-assignees');
+
+        $assigner = request()->user();
         
         // Validate assignees are in the same unit
         $invalid = User::whereIn('id', $userIds)
@@ -29,7 +31,7 @@ class SyncAssigneesAction extends Action
         $currentAssigneeIds = $report->assignees()->pluck('users.id')->toArray();
         
         // Sync assignees
-        $report->assignees()->sync($userIds);
+        $report->assignees()->syncWithoutDetaching($userIds);   
         
         // Determine newly assigned users (not previously assigned)
         $newlyAssignedIds = array_diff($userIds, $currentAssigneeIds);
@@ -46,6 +48,7 @@ class SyncAssigneesAction extends Action
                         'report_title' => $report->title,
                         'report_status' => $report->status,
                         'action_url' => "/reports/{$report->id}",
+                        'assigner_name' => $assigner->name ?? 'Unknown',
                     ]
                 );
             } catch (\Exception $e) {

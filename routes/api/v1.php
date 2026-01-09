@@ -17,6 +17,7 @@ use App\Http\Controllers\API\V1\Asset\Location\DeleteLocationController;
 use App\Http\Controllers\API\V1\Asset\Location\DetailLocationController;
 use App\Http\Controllers\API\V1\Asset\Location\IndexLocationController;
 use App\Http\Controllers\API\V1\Asset\Location\UpdateLocationController;
+use App\Http\Controllers\API\V1\Notification\TotalUnreadNotificationsController;
 use App\Http\Controllers\API\V1\Report\Category\CreateReportCategoryController;
 use App\Http\Controllers\API\V1\Report\Category\DeleteReportCategoryController;
 use App\Http\Controllers\API\V1\Report\Category\DetailReportCategoryController;
@@ -221,6 +222,7 @@ Route::get('metrics', function () {
 
 Route::prefix('notifications')->middleware(['auth:api'])->group(function () {
     Route::get('', IndexNotificationController::class);
+    Route::get('total-unread', TotalUnreadNotificationsController::class);
     Route::post('read-all', MarkAllReadNotificationController::class);
     Route::post('{notification}/read', MarkReadNotificationController::class);
 });

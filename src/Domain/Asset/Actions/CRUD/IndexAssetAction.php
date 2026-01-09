@@ -55,7 +55,10 @@ class IndexAssetAction extends Action
                 $builder->where('name', 'ilike', $pattern)
                     ->orWhere('code', 'ilike', $pattern)
                     ->orWhere('category', 'ilike', $pattern)
-                    ->orWhere('serial_number', 'ilike', $pattern);
+                    ->orWhere('serial_number', 'ilike', $pattern)
+                    ->orWhereHas('category', function ($q) use ($pattern) {
+                    $q->where('name', 'ilike', $pattern);
+                });
             });
         }
 
