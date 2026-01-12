@@ -46,7 +46,7 @@ RUN php artisan config:cache
 RUN php artisan route:cache
 RUN php artisan view:cache
 RUN php artisan key:generate
-# RUN php artisan optimize:clear
+RUN php artisan optimize:clear
 # RUN php artisan migrate --force
 # RUN  php artisan passport:install
 

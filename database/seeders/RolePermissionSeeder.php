@@ -27,31 +27,36 @@ class RolePermissionSeeder extends Seeder
 
         // kadin: broad rights on services + read-only users/roles/perms + storage
         $assign($roleKadin, [
-            'view-report','create-report','update-report','delete-report','review-report','export-report','manage-assignees',
-            'submit-report',
+            'view-report','create-report','update-report','delete-report','review-report','export-report','manage-assignees','submit-report',
             'presign-evidence','finalize-evidence','delete-evidence',
             'list-notifications','mark-notification','read-all-notifications',
-            'view-user','view-role','view-permission','view-permission-apps','upload-file','edit-user-profile',
-            'view-asset','add-asset','edit-asset','delete-asset','activate-asset','deactivate-asset','maintain-asset','retire-asset','attach-asset-report','detach-asset-report'
-        ]);
+            'view-user','view-unit','upload-file','edit-user-profile',
+            'view-asset','add-asset','edit-asset','delete-asset','activate-asset','deactivate-asset','maintain-asset','retire-asset','attach-asset-report','detach-asset-report',
+            'view-asset-category','add-asset-category','edit-asset-category','delete-asset-category',
+            'view-location','add-location','edit-location','delete-location',
+            'view-report-category','add-report-category','edit-report-category','delete-report-category']);
 
         // kabid: unit-level rights and approvals + minimal users/storage
         $assign($roleKabid, [
-            'view-report','update-report','review-report','export-report','manage-assignees',
-            'submit-report',
+           'view-report','create-report','update-report','delete-report','review-report','export-report','manage-assignees','submit-report',
+            'presign-evidence','finalize-evidence','delete-evidence',
             'list-notifications','mark-notification','read-all-notifications',
-            'view-user','upload-file','edit-user-profile',
-            'view-asset','activate-asset','deactivate-asset','maintain-asset','attach-asset-report','detach-asset-report'
+            'view-user','view-unit','upload-file','edit-user-profile',
+            'view-asset','add-asset','edit-asset','delete-asset','activate-asset','deactivate-asset','maintain-asset','retire-asset','attach-asset-report','detach-asset-report',
+            'view-asset-category','add-asset-category','edit-asset-category','delete-asset-category',
+            'view-location','add-location','edit-location','delete-location',
+            'view-report-category','add-report-category','edit-report-category','delete-report-category'
         ]);
 
         // pegawai: create/update own, manage evidence + storage + edit own profile
         $assign($rolePegawai, [
-            'view-report','create-report','update-report',
-            'submit-report',
-            'presign-evidence','finalize-evidence','delete-evidence',
+            'view-report','submit-report','presign-evidence','finalize-evidence','delete-evidence',
             'list-notifications','mark-notification','read-all-notifications',
-            'upload-file','edit-user-profile',
-            'view-asset','activate-asset','deactivate-asset','attach-asset-report','detach-asset-report'
+            'view-user', 'upload-file','edit-user-profile',
+            'view-asset','add-asset','edit-asset','delete-asset','activate-asset','deactivate-asset','maintain-asset','retire-asset','attach-asset-report','detach-asset-report',
+            'view-asset-category','add-asset-category','edit-asset-category','delete-asset-category',
+            'view-location','add-location','edit-location','delete-location',
+            'view-report-category','add-report-category','edit-report-category','delete-report-category'
         ]);
     }
 }

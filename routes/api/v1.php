@@ -8,6 +8,7 @@ use App\Http\Controllers\API\V1\Asset\Attachment\IndexAttachmentController;
 use App\Http\Controllers\API\V1\Asset\Attachment\PresignAttachmentController;
 use App\Http\Controllers\API\V1\Asset\Attachment\UpdateAttachmentController;
 use App\Http\Controllers\API\V1\Asset\GenerateAssetHandoverPdfController;
+use App\Http\Controllers\API\V1\Asset\GenerateAssetLabelPdfController;
 use App\Http\Controllers\API\V1\Asset\Category\CreateAssetCategoryController;
 use App\Http\Controllers\API\V1\Asset\Category\IndexAssetCategoryController;
 use App\Http\Controllers\API\V1\Asset\Category\DeleteAssetCategoryController;
@@ -156,6 +157,7 @@ Route::prefix('assets')->middleware(['auth:api'])->group(function () {
     Route::get('', IndexAssetController::class);
     Route::post('', CreateAssetController::class);
     Route::post('handover/print', GenerateAssetHandoverPdfController::class);
+    Route::post('label/print', GenerateAssetLabelPdfController::class);
     Route::prefix('{asset}')->group(function () {
         Route::get('', DetailAssetController::class);
         Route::put('', UpdateAssetController::class);
