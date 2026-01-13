@@ -34,7 +34,9 @@ class RolePermissionSeeder extends Seeder
             'view-asset','add-asset','edit-asset','delete-asset','activate-asset','deactivate-asset','maintain-asset','retire-asset','attach-asset-report','detach-asset-report',
             'view-asset-category','add-asset-category','edit-asset-category','delete-asset-category',
             'view-location','add-location','edit-location','delete-location',
-            'view-report-category','add-report-category','edit-report-category','delete-report-category']);
+            'view-report-category','add-report-category','edit-report-category','delete-report-category',
+            'view-letter','add-incoming-letter','add-outgoing-letter','edit-letter','delete-letter','analyze-letter',
+            'view-classification','add-classification','edit-classification','delete-classification']);
 
         // kabid: unit-level rights and approvals + minimal users/storage
         $assign($roleKabid, [
@@ -45,7 +47,9 @@ class RolePermissionSeeder extends Seeder
             'view-asset','add-asset','edit-asset','delete-asset','activate-asset','deactivate-asset','maintain-asset','retire-asset','attach-asset-report','detach-asset-report',
             'view-asset-category','add-asset-category','edit-asset-category','delete-asset-category',
             'view-location','add-location','edit-location','delete-location',
-            'view-report-category','add-report-category','edit-report-category','delete-report-category'
+            'view-report-category','add-report-category','edit-report-category','delete-report-category',
+            'view-letter','add-incoming-letter','add-outgoing-letter','edit-letter','delete-letter','analyze-letter',
+            'view-classification','add-classification','edit-classification','delete-classification'
         ]);
 
         // pegawai: create/update own, manage evidence + storage + edit own profile
@@ -56,7 +60,9 @@ class RolePermissionSeeder extends Seeder
             'view-asset','add-asset','edit-asset','delete-asset','activate-asset','deactivate-asset','maintain-asset','retire-asset','attach-asset-report','detach-asset-report',
             'view-asset-category','add-asset-category','edit-asset-category','delete-asset-category',
             'view-location','add-location','edit-location','delete-location',
-            'view-report-category','add-report-category','edit-report-category','delete-report-category'
+            'view-report-category','add-report-category','edit-report-category','delete-report-category',
+            'view-letter','add-incoming-letter','add-outgoing-letter','edit-letter','delete-letter','analyze-letter',
+            'view-classification','add-classification','edit-classification','delete-classification'
         ]);
     }
 }

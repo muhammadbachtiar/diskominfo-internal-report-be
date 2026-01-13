@@ -88,6 +88,20 @@ class PermissionSeeder extends Seeder
             ['function' => 'edit-unit', 'apps' => 'units'],
             ['function' => 'delete-unit', 'apps' => 'units'],
             ['function' => 'view-unit', 'apps' => 'units'],
+
+            // Letters service
+            ['function' => 'view-letter', 'apps' => 'letters'],
+            ['function' => 'add-incoming-letter', 'apps' => 'letters'],
+            ['function' => 'add-outgoing-letter', 'apps' => 'letters'],
+            ['function' => 'edit-letter', 'apps' => 'letters'],
+            ['function' => 'delete-letter', 'apps' => 'letters'],
+            ['function' => 'analyze-letter', 'apps' => 'letters'],
+
+            // Classification service
+            ['function' => 'view-classification', 'apps' => 'classifications'],
+            ['function' => 'add-classification', 'apps' => 'classifications'],
+            ['function' => 'edit-classification', 'apps' => 'classifications'],
+            ['function' => 'delete-classification', 'apps' => 'classifications'],
         ];
 
         // Upsert by function, update apps to reflect microservice name

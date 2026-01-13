@@ -6,7 +6,7 @@ ENV SERVER_NAME="localhost"
 
 # Install PHP extensions dan tools
 RUN apt-get update && apt-get install -y \
-    ca-certificates curl unzip git gnupg2 \
+    ca-certificates curl unzip git gnupg2 ghostscript \
     && install-php-extensions \
         bcmath \
         pdo_pgsql \
@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
         pcntl \
         gd \
         exif \
+        imagick \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer directly

@@ -80,6 +80,8 @@ use App\Http\Controllers\API\V1\Unit\CRUD\CreateUnitController;
 use App\Http\Controllers\API\V1\Unit\CRUD\DetailUnitController;
 use App\Http\Controllers\API\V1\Unit\CRUD\UpdateUnitController;
 use App\Http\Controllers\API\V1\Unit\CRUD\DeleteUnitController;
+use App\Http\Controllers\API\V1\LetterController;
+use App\Http\Controllers\API\V1\ClassificationController;
 
 Route::post(uri: 'login', action: LoginController::class);
 
@@ -240,4 +242,23 @@ Route::prefix('units')->middleware(['auth:api'])->group(function () {
         Route::patch('', UpdateUnitController::class);
         Route::delete('', DeleteUnitController::class);
     });
+});
+
+Route::prefix('letters')->middleware(['auth:api'])->group(function () {
+    Route::post('analyze', [LetterController::class, 'analyze']);
+    Route::post('incoming', [LetterController::class, 'storeIncoming']);
+    Route::post('outgoing', [LetterController::class, 'storeOutgoing']);
+    Route::get('', [LetterController::class, 'index']);
+    Route::get('{id}', [LetterController::class, 'show']);
+    Route::put('{id}', [LetterController::class, 'update']);
+    Route::delete('{id}', [LetterController::class, 'destroy']);
+});
+
+// Classifications
+Route::prefix('classifications')->middleware(['auth:api'])->group(function () {
+    Route::get('', [ClassificationController::class, 'index']);
+    Route::post('', [ClassificationController::class, 'store']);
+    Route::get('{id}', [ClassificationController::class, 'show']);
+    Route::put('{id}', [ClassificationController::class, 'update']);
+    Route::delete('{id}', [ClassificationController::class, 'destroy']);
 });
