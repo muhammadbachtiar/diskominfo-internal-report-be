@@ -91,8 +91,8 @@ Format JSON yang diharapkan:
 
             if ($result && isset($result['classification'])) {
                 // Find matching classification in DB
-                $classification = Classification::where('name', 'ILIKE', $result['classification'])
-                    ->orWhere('name', 'ILIKE', '%' . $result['classification'] . '%')
+                $classification = Classification::where('name', 'LIKE', $result['classification'])
+                    ->orWhere('name', 'LIKE', '%' . $result['classification'] . '%')
                     ->first();
                 
                 $result['classification_id'] = $classification ? $classification->id : null;

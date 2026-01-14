@@ -61,8 +61,8 @@ class IndexUserAction extends Action
         $pattern = '%' . $search . '%';
         
         $this->user = $this->user->where(function ($query) use ($pattern) {
-            $query->where('name', 'ilike', $pattern)
-                ->orWhere('email', 'ilike', $pattern);
+            $query->where('name', 'like', $pattern)
+                ->orWhere('email', 'like', $pattern);
         });
     }
 

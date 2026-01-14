@@ -2,69 +2,98 @@
 
 namespace App\Http\Controllers\API\V1;
 
-use App\Http\Controllers\Controller;
 use Domain\Shared\Actions\CheckRolesAction;
 use Infra\Letter\Models\Classification;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Infra\Shared\Controllers\BaseController;
+use Infra\Shared\Enums\HttpStatus;
 
-class ClassificationController extends Controller
+class ClassificationController extends BaseController
 {
     public function index()
     {
-        CheckRolesAction::resolve()->execute('view-classification');
-        
-        $classifications = Classification::all();
-        return response()->json($classifications);
+        try {
+            CheckRolesAction::resolve()->execute('view-classification');
+            
+            $classifications = Classification::all();
+            return $this->resolveForSuccessResponseWith('Classifications', $classifications);
+        } catch (ValidationException $th) {
+            return $this->resolveForFailedResponseWith('Validation Error', $th->errors(), HttpStatus::UnprocessableEntity);
+        } catch (\Throwable $th) {
+            return $this->resolveForFailedResponseWith($th->getMessage());
+        }
     }
 
     public function store(Request $request)
     {
-        CheckRolesAction::resolve()->execute('add-classification');
-        
-        $request->validate([
-            'name' => 'required|string|max:255|unique:classifications,name',
-            'description' => 'nullable|string',
-        ]);
+        try {
+            CheckRolesAction::resolve()->execute('add-classification');
+            
+            $data = $request->validate([
+                'name' => 'required|string|max:255|unique:classifications,name',
+                'description' => 'nullable|string',
+            ]);
 
-        $classification = Classification::create([
-            'name' => $request->name,
-            'description' => $request->description,
-        ]);
+            $classification = Classification::create($data);
 
-        return response()->json($classification, 201);
+            return $this->resolveForSuccessResponseWith('Classification created', $classification, HttpStatus::Created);
+        } catch (ValidationException $th) {
+            return $this->resolveForFailedResponseWith('Validation Error', $th->errors(), HttpStatus::UnprocessableEntity);
+        } catch (\Throwable $th) {
+            return $this->resolveForFailedResponseWith($th->getMessage());
+        }
     }
 
     public function show($id)
     {
-        CheckRolesAction::resolve()->execute('view-classification');
-        
-        $classification = Classification::findOrFail($id);
-        return response()->json($classification);
+        try {
+            CheckRolesAction::resolve()->execute('view-classification');
+            
+            $classification = Classification::findOrFail($id);
+            return $this->resolveForSuccessResponseWith('Classification', $classification);
+        } catch (ValidationException $th) {
+            return $this->resolveForFailedResponseWith('Validation Error', $th->errors(), HttpStatus::UnprocessableEntity);
+        } catch (\Throwable $th) {
+            return $this->resolveForFailedResponseWith($th->getMessage());
+        }
     }
 
     public function update(Request $request, $id)
     {
-        CheckRolesAction::resolve()->execute('edit-classification');
-        
-        $classification = Classification::findOrFail($id);
-        
-        $request->validate([
-            'name' => 'sometimes|required|string|max:255|unique:classifications,name,' . $id,
-            'description' => 'nullable|string',
-        ]);
+        try {
+            CheckRolesAction::resolve()->execute('edit-classification');
+            
+            $classification = Classification::findOrFail($id);
+            
+            $data = $request->validate([
+                'name' => 'sometimes|required|string|max:255|unique:classifications,name,' . $id,
+                'description' => 'nullable|string',
+            ]);
 
-        $classification->update($request->only(['name', 'description']));
+            $classification->update($data);
 
-        return response()->json($classification);
+            return $this->resolveForSuccessResponseWith('Classification updated', $classification);
+        } catch (ValidationException $th) {
+            return $this->resolveForFailedResponseWith('Validation Error', $th->errors(), HttpStatus::UnprocessableEntity);
+        } catch (\Throwable $th) {
+            return $this->resolveForFailedResponseWith($th->getMessage());
+        }
     }
 
     public function destroy($id)
     {
-        CheckRolesAction::resolve()->execute('delete-classification');
-        
-        $classification = Classification::findOrFail($id);
-        $classification->delete();
-        
-        return response()->json(['message' => 'Classification deleted']);
+        try {
+            CheckRolesAction::resolve()->execute('delete-classification');
+            
+            $classification = Classification::findOrFail($id);
+            $classification->delete();
+            
+            return $this->resolveForSuccessResponseWith('Classification deleted', null);
+        } catch (ValidationException $th) {
+            return $this->resolveForFailedResponseWith('Validation Error', $th->errors(), HttpStatus::UnprocessableEntity);
+        } catch (\Throwable $th) {
+            return $this->resolveForFailedResponseWith($th->getMessage());
+        }
     }
 }

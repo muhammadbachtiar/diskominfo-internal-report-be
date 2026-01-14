@@ -2,29 +2,33 @@
 
 namespace App\Http\Controllers\API\V1;
 
-use App\Http\Controllers\Controller;
 use Domain\Letter\Actions\AnalyzeLetterAction;
 use Domain\Letter\Actions\CreateLetterAction;
 use Infra\Letter\Models\Letter;
 use Domain\Shared\Actions\CheckRolesAction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Infra\Shared\Controllers\BaseController;
+use Infra\Shared\Enums\HttpStatus;
 
-class LetterController extends Controller
+class LetterController extends BaseController
 {
     public function analyze(Request $request, AnalyzeLetterAction $action)
     {
-        CheckRolesAction::resolve()->execute('analyze-letter');
-        
-        $request->validate([
-            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240', 
-        ]);
-
         try {
+            CheckRolesAction::resolve()->execute('analyze-letter');
+            
+            $request->validate([
+                'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240', 
+            ]);
+
             $result = $action->execute($request->file('file'));
-            return response()->json($result);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Analysis failed: ' . $e->getMessage()], 500);
+            return $this->resolveForSuccessResponseWith('Letter analysis completed', $result);
+        } catch (ValidationException $th) {
+            return $this->resolveForFailedResponseWith('Validation Error', $th->errors(), HttpStatus::UnprocessableEntity);
+        } catch (\Throwable $th) {
+            return $this->resolveForFailedResponseWith($th->getMessage());
         }
     }
 
@@ -44,101 +48,142 @@ class LetterController extends Controller
 
     private function store(Request $request, CreateLetterAction $action, string $type)
     {
-        $request->validate([
-            'letter_number' => 'required|string',
-            'sender_receiver' => 'required|string',
-            'date_of_letter' => 'required|date',
-            'year' => 'required|integer',
-            'subject' => 'required|string',
-            'classification_id' => 'required|exists:classifications,id',
-            'unit_id' => 'nullable|exists:units,id',
-            'description' => 'nullable|string',
-            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:20480', // 20MB
-            'metadata_ai' => 'nullable|array',
-        ]);
-
-        $data = $request->all();
-        $data['type'] = $type;
-        $data['created_by'] = auth()->id() ?? 1; // Fallback for dev if no auth
-
-        DB::beginTransaction();
         try {
+            $data = $request->validate([
+                'letter_number' => 'required|string',
+                'sender_receiver' => 'required|string',
+                'date_of_letter' => 'required|date',
+                'year' => 'required|integer',
+                'subject' => 'required|string',
+                'classification_id' => 'required|exists:classifications,id',
+                'unit_id' => 'nullable|exists:units,id',
+                'description' => 'nullable|string',
+                'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:20480', // 20MB
+                'metadata_ai' => 'nullable|array',
+            ]);
+
+            $data['type'] = $type;
+            $data['created_by'] = auth()->id() ?? 1; // Fallback for dev if no auth
+
+            DB::beginTransaction();
             $letter = $action->execute($data, $request->file('file'));
             DB::commit();
-            return response()->json($letter, 201);
-        } catch (\Exception $e) {
+            
+            return $this->resolveForSuccessResponseWith('Letter created', $letter, HttpStatus::Created);
+        } catch (ValidationException $th) {
             DB::rollBack();
-            return response()->json(['message' => 'Failed to create letter: ' . $e->getMessage()], 500);
+            return $this->resolveForFailedResponseWith('Validation Error', $th->errors(), HttpStatus::UnprocessableEntity);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $this->resolveForFailedResponseWith($th->getMessage());
         }
     }
 
     public function index(Request $request)
     {
-        CheckRolesAction::resolve()->execute('view-letter');
-        
-        $query = Letter::with(['classification', 'unit', 'creator']);
+        try {
+            CheckRolesAction::resolve()->execute('view-letter');
+            
+            $query = Letter::with(['classification', 'unit', 'creator']);
 
-        if ($request->has('unit_id')) {
-            $query->byUnit($request->unit_id);
-        }
+            if ($request->has('unit_id')) {
+                $query->byUnit($request->unit_id);
+            }
 
-        if ($request->has('type')) {
-            $query->where('type', $request->type);
-        }
-        
-        if ($request->has('year')) {
-            $query->where('year', $request->year);
-        }
+            if ($request->has('type')) {
+                $query->where('type', $request->type);
+            }
+            
+            if ($request->has('classification_id')) {
+                $query->where('classification_id', $request->classification_id);
+            }
 
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('subject', 'like', "%{$search}%")
-                  ->orWhere('letter_number', 'like', "%{$search}%")
-                  ->orWhere('sender_receiver', 'like', "%{$search}%");
-            });
-        }
+            if ($request->has('from') && $request->has('to')) {
+                $query->whereBetween('date_of_letter', [$request->from, $request->to]);
+            } elseif ($request->has('from')) {
+                $query->where('date_of_letter', '>=', $request->from);
+            } elseif ($request->has('to')) {
+                $query->where('date_of_letter', '<=', $request->to);
+            }
 
-        return response()->json($query->paginate(15));
+            if ($request->has('year')) {
+                $query->where('year', $request->year);
+            }
+
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('subject', 'like', "%{$search}%")
+                      ->orWhere('letter_number', 'like', "%{$search}%")
+                      ->orWhere('sender_receiver', 'like', "%{$search}%");
+                });
+            }
+
+            $paginated = $query->paginate(15);
+            return $this->resolveForSuccessResponseWithPage('Letters', $paginated);
+        } catch (ValidationException $th) {
+            return $this->resolveForFailedResponseWith('Validation Error', $th->errors(), HttpStatus::UnprocessableEntity);
+        } catch (\Throwable $th) {
+            return $this->resolveForFailedResponseWith($th->getMessage());
+        }
     }
 
     public function show($id)
     {
-        CheckRolesAction::resolve()->execute('view-letter');
-        
-        $letter = Letter::with(['classification', 'unit', 'creator'])->findOrFail($id);
-        return response()->json($letter);
+        try {
+            CheckRolesAction::resolve()->execute('view-letter');
+            
+            $letter = Letter::with(['classification', 'unit', 'creator'])->findOrFail($id);
+            return $this->resolveForSuccessResponseWith('Letter', $letter);
+        } catch (ValidationException $th) {
+            return $this->resolveForFailedResponseWith('Validation Error', $th->errors(), HttpStatus::UnprocessableEntity);
+        } catch (\Throwable $th) {
+            return $this->resolveForFailedResponseWith($th->getMessage());
+        }
     }
     
     public function update(Request $request, $id)
     {
-        CheckRolesAction::resolve()->execute('edit-letter');
-        
-        $letter = Letter::findOrFail($id);
-        
-        $request->validate([
-            'letter_number' => 'string',
-            'sender_receiver' => 'string',
-            'date_of_letter' => 'date',
-            'year' => 'integer',
-            'subject' => 'string',
-            'classification_id' => 'exists:classifications,id',
-            'unit_id' => 'nullable|exists:units,id',
-            'description' => 'nullable|string',
-            'metadata_ai' => 'nullable|array',
-        ]);
+        try {
+            CheckRolesAction::resolve()->execute('edit-letter');
+            
+            $letter = Letter::findOrFail($id);
+            
+            $data = $request->validate([
+                'letter_number' => 'string',
+                'sender_receiver' => 'string',
+                'date_of_letter' => 'date',
+                'year' => 'integer',
+                'subject' => 'string',
+                'classification_id' => 'exists:classifications,id',
+                'unit_id' => 'nullable|exists:units,id',
+                'description' => 'nullable|string',
+                'metadata_ai' => 'nullable|array',
+            ]);
 
-        $letter->update($request->all());
-        
-        return response()->json($letter);
+            $letter->update($data);
+            
+            return $this->resolveForSuccessResponseWith('Letter updated', $letter);
+        } catch (ValidationException $th) {
+            return $this->resolveForFailedResponseWith('Validation Error', $th->errors(), HttpStatus::UnprocessableEntity);
+        } catch (\Throwable $th) {
+            return $this->resolveForFailedResponseWith($th->getMessage());
+        }
     }
 
     public function destroy($id)
     {
-        CheckRolesAction::resolve()->execute('delete-letter');
-        
-        $letter = Letter::findOrFail($id);
-        $letter->delete();
-        return response()->json(['message' => 'Letter deleted']);
+        try {
+            CheckRolesAction::resolve()->execute('delete-letter');
+            
+            $letter = Letter::findOrFail($id);
+            $letter->delete();
+            
+            return $this->resolveForSuccessResponseWith('Letter deleted', null);
+        } catch (ValidationException $th) {
+            return $this->resolveForFailedResponseWith('Validation Error', $th->errors(), HttpStatus::UnprocessableEntity);
+        } catch (\Throwable $th) {
+            return $this->resolveForFailedResponseWith($th->getMessage());
+        }
     }
 }

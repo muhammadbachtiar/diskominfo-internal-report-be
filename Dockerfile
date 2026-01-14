@@ -41,7 +41,7 @@ COPY . .
 # hilangin htaccess,info.php
 RUN rm -f .htaccess && rm -f info.php
 # Install dependencies dan build asset (jika pakai Vite)
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 #RUN npm install && npm run build
 RUN php artisan config:cache
 RUN php artisan route:cache

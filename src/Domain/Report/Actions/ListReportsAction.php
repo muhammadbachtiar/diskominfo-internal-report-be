@@ -50,11 +50,11 @@ class ListReportsAction extends Action
         if (!empty($search)) {
             $pattern = '%' . $search . '%';
             $query = $query->where(function($q) use ($pattern) {
-                $q->where('title', 'ilike', $pattern)
-                  ->orWhere('number', 'ilike', $pattern)
-                  ->orWhere('category', 'ilike', $pattern)
-                  ->orWhere('location', 'ilike', $pattern)
-                  ->orWhere('description', 'ilike', $pattern);
+                $q->where('title', 'like', $pattern)
+                  ->orWhere('number', 'like', $pattern)
+                  ->orWhere('category', 'like', $pattern)
+                  ->orWhere('location', 'like', $pattern)
+                  ->orWhere('description', 'like', $pattern);
             });
         }
         if (!empty(Arr::get($filters, 'from'))) $query = $query->whereDate('event_at', '>=', Arr::get($filters, 'from'));

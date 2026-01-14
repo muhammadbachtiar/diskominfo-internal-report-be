@@ -6,6 +6,7 @@ use Database\Seeders\UnitSeeder;
 use Database\Seeders\UserSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\RbacDemoUsersSeeder;
+use Database\Seeders\ClassificationSeeder;
 use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
@@ -22,7 +23,11 @@ return new class extends Migration
         (new RolePermissionSeeder)->run();
 
         // Create super admin, then demo RBAC users
-        (new UserSeeder)->run();   }
+        (new UserSeeder)->run();
+        
+        // Seed classifications
+        (new ClassificationSeeder)->run();
+    }
 
     /**
      * Reverse the migrations.

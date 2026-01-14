@@ -52,12 +52,12 @@ class IndexAssetAction extends Action
         if ($search = Arr::get($filters, 'search')) {
             $query->where(function ($builder) use ($search) {
                 $pattern = '%' . $search . '%';
-                $builder->where('name', 'ilike', $pattern)
-                    ->orWhere('code', 'ilike', $pattern)
-                    ->orWhere('category', 'ilike', $pattern)
-                    ->orWhere('serial_number', 'ilike', $pattern)
+                $builder->where('name', 'like', $pattern)
+                    ->orWhere('code', 'like', $pattern)
+                    ->orWhere('category', 'like', $pattern)
+                    ->orWhere('serial_number', 'like', $pattern)
                     ->orWhereHas('category', function ($q) use ($pattern) {
-                    $q->where('name', 'ilike', $pattern);
+                    $q->where('name', 'like', $pattern);
                 });
             });
         }

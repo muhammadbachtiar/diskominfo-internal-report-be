@@ -15,19 +15,18 @@ class CreateLetterAction extends Action
     public function execute(array $data, UploadedFile $file): Letter
     {
         // 1. Upload Main File
-        // Using 'public' visibility or default based on config. 
-        // Report evidence uses: 'evidences/{id}/{uuid}.ext'.
-        // We'll use 'letters/{uuid}/{uuid}.ext'.
-        
         $uuid = (string) Str::uuid();
         $directory = "letters/{$uuid}";
         
-        // Upload file
-        // We use putFileAs to control the name, or just putFile.
-        // Assuming 's3' disk is the default or configured one.
-        $disk = Storage::disk('s3');
+        // Use default disk or s3 explicitly if needed. 
+        // Recommending using the configured default or 'public' for easier access if S3 not set.
+        // If the environment is set up with MinIO/S3 as 's3' disk, we should use it.
+        // We'll check if 's3' is configured, otherwise fallback to 'public'.
+        $diskName = config('filesystems.disks.s3.bucket') ? 's3' : 'public';
+        $disk = Storage::disk($diskName);
+        
         $path = $disk->putFileAs($directory, $file, $uuid . '.' . $file->getClientOriginalExtension());
-        $fileUrl = $disk->url($path); // Or just store path if preferred, user asked for 'file_url'.
+        $fileUrl = $disk->url($path);
 
         // 2. Generate and Upload Thumbnail
         $thumbnailUrl = null;
@@ -40,8 +39,7 @@ class CreateLetterAction extends Action
                 $thumbnailUrl = $disk->url($thumbPath);
             }
         } catch (\Exception $e) {
-            // Log error but don't fail the whole request
-            \Illuminate\Support\Facades\Log::warning("Thumbnail generation failed for letter: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::warning("Thumbnail generation failed for letter {$uuid}: " . $e->getMessage());
         }
 
         // 3. Create Record
@@ -55,8 +53,8 @@ class CreateLetterAction extends Action
             'classification_id' => $data['classification_id'],
             'unit_id' => $data['unit_id'] ?? null,
             'description' => $data['description'] ?? null,
-            'file_url' => $fileUrl, // Store full URL from MinIO/S3
-            'thumbnail_url' => $thumbnailUrl, // Store full URL from MinIO/S3 (already using url() method)
+            'file_url' => $fileUrl,
+            'thumbnail_url' => $thumbnailUrl,
             'metadata_ai' => $data['metadata_ai'] ?? null,
             'created_by' => $data['created_by'],
         ]);
@@ -65,30 +63,47 @@ class CreateLetterAction extends Action
     private function generateThumbnail(UploadedFile $file)
     {
         $mime = $file->getMimeType();
+        $tempPath = $file->getPathname();
         
         // If Image
         if (str_starts_with($mime, 'image/')) {
             // Using Intervention Image v3
-            $manager = extension_loaded('imagick') ? ImageManager::imagick() : ImageManager::gd();
-            return $manager->read($file->getPathname())->scale(width: 300)->toJpeg()->toString();
+            // Ensure we use the correct driver available in the container (Imagick is installed)
+            $manager = ImageManager::imagick(); 
+            return $manager->read($tempPath)->scale(width: 300)->toJpeg()->toString();
         }
 
         // If PDF
         if ($mime === 'application/pdf') {
             if (class_exists(Pdf::class)) {
-                // Spatie PDF to Image
-                $pdf = new Pdf($file->getPathname());
-                $pdf->setPage(1);
-                // Return content. Spatie saves to file. 
-                // We might need to save to temp file then read.
-                $tempObj = tempnam(sys_get_temp_dir(), 'thumb');
-                $pdf->saveImage($tempObj);
-                $content = file_get_contents($tempObj);
-                unlink($tempObj);
-                return $content;
+                try {
+                    // Spatie PDF to Image
+                    $pdf = new Pdf($tempPath);
+                    
+                    // Render first page as image
+                    // We need to save to a temp file because v2 saveImage writes to disk
+                    $tempOutput = tempnam(sys_get_temp_dir(), 'thumb_') . '.jpg';
+                    
+                    $pdf->setPage(1)
+                        ->saveImage($tempOutput);
+                    
+                    if (file_exists($tempOutput)) {
+                        $content = file_get_contents($tempOutput);
+                        unlink($tempOutput);
+                        
+                        // Resize the generated image using Intervention
+                        $manager = ImageManager::imagick();
+                        return $manager->read($content)->scale(width: 300)->toJpeg()->toString();
+                    }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("PDF thumbnail generation error: " . $e->getMessage());
+                    throw $e;
+                }
+            } else {
+                 \Illuminate\Support\Facades\Log::warning("Spatie\PdfToImage\Pdf class not found.");
             }
         }
 
-        return null; // Not supported
+        return null;
     }
 }
