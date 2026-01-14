@@ -14,7 +14,7 @@ class SyncAssigneesController extends BaseController
     public function __invoke(Report $report, Request $req)
     {
         try {
-            $this->authorize('assign', $report);
+            $this->authorize('assignMemberToReport', $report);
             $data = $req->validate([
                 'user_ids' => 'required|array|min:1',
                 'user_ids.*' => 'integer|exists:users,id',

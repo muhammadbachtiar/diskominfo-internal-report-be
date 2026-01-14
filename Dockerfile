@@ -6,7 +6,7 @@ ENV SERVER_NAME="localhost"
 
 # Install PHP extensions dan tools
 RUN apt-get update && apt-get install -y \
-    ca-certificates curl unzip git gnupg2 \
+    ca-certificates curl unzip git gnupg2 ghostscript \
     && install-php-extensions \
         bcmath \
         pdo_pgsql \
@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
         pcntl \
         gd \
         exif \
+        imagick \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer directly
@@ -40,15 +41,15 @@ COPY . .
 # hilangin htaccess,info.php
 RUN rm -f .htaccess && rm -f info.php
 # Install dependencies dan build asset (jika pakai Vite)
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 #RUN npm install && npm run build
 RUN php artisan config:cache
 RUN php artisan route:cache
 RUN php artisan view:cache
 RUN php artisan key:generate
 RUN php artisan optimize:clear
-RUN php artisan migrate --force
-RUN  php artisan passport:install
+# RUN php artisan migrate --force
+# RUN  php artisan passport:install
 
 
 

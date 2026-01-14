@@ -6,6 +6,7 @@ use Illuminate\Support\Arr;
 use Infra\Shared\Foundations\Action;
 use Domain\Shared\Actions\CheckRolesAction;
 use Infra\Shared\Models\Notification;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ListUserNotificationsAction extends Action
 {
@@ -15,8 +16,9 @@ class ListUserNotificationsAction extends Action
         if (empty($filters)) {
             $filters = request()->query();
         }
-        $select = Arr::get($filters, 'select');
+        $select = Arr::get($filters, 'select');;
         $base = Notification::where('user_id', $userId)->orderByDesc('created_at');
+
         if ($select === 'yes') {
             return $base->limit(100)->get();
         }

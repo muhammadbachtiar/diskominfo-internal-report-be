@@ -19,4 +19,7 @@ enum AppsList: string
     case Notifications = 'notifications';
     case Assets = 'assets';
     case Units = 'units';
+    case Locations = 'locations';
+    case AssetCategories = 'asset-categories';
+    case ReportCategories = 'report-categories';
 }

@@ -46,7 +46,7 @@ class IndexRolesAction extends Action
     protected function search($name)
     {
         $prefix = rtrim($name, '%');
-        $this->roles = $this->roles->where('nama', 'ilike', $prefix.'%');
+        $this->roles = $this->roles->where('nama', 'like', $prefix.'%');
     }
 
     protected function handleWith($relationship)

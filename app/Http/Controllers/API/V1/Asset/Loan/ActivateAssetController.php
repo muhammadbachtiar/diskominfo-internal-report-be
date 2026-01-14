@@ -7,6 +7,7 @@ use Domain\Shared\Actions\CheckRolesAction;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Infra\Asset\Models\Location;
 use Infra\Shared\Controllers\BaseController;
 use Infra\Shared\Enums\HttpStatus;
 use InvalidArgumentException;
@@ -18,16 +19,19 @@ class ActivateAssetController extends BaseController
         try {
             CheckRolesAction::resolve()->execute('activate-asset');
 
-                        $data = $request->validate([
+             $data = $request->validate([
                 'location_id' => ['required', 'uuid', 'exists:locations,id'],
+                'borrower_id' => ['required', 'integer'],
+                'pic' => ['nullable', 'string'],
+                'note' => ['nullable', 'string'],
             ]);
+
+     
 
             $loan = BorrowAssetService::resolve()->execute(
                 $asset,
                 (int) $data['borrower_id'],
-                array_key_exists('lat', $data) ? (float) $data['lat'] : null,
-                array_key_exists('long', $data) ? (float) $data['long'] : null,
-                $data['location_name'] ?? null,
+                $data['location_id'],
                 $data['pic'] ?? null,
                 $data['note'] ?? null,
             );

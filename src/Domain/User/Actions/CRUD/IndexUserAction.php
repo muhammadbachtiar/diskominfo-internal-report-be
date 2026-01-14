@@ -23,6 +23,8 @@ class IndexUserAction extends Action
         }
         $this->user = $this->user->where('id', '!=', Auth::user()->id)->where('id', '!=', 1);
 
+        $this->applyUnitFilter();
+
         if (Arr::exists($query, 'search')) {
             $this->search($query['search']);
         }
@@ -42,14 +44,28 @@ class IndexUserAction extends Action
         return $this->user;
     }
 
-    protected function search($search)
+     protected function applyUnitFilter()
     {
-        $prefix = rtrim($search, '%');
-        $this->user = $this->user->where(function ($query) use ($prefix, $search) {
-            $query->where('name', 'ilike', $prefix.'%')
-                ->orWhere('email', 'ilike', $prefix.'%');
+        $currentUser = Auth::user();
+        
+        $isSuperadmin = $currentUser->roles()->where('nama', 'admin')->exists();
+        $isKadin = $currentUser->roles()->where('nama', 'kadin')->exists();
+        
+        if (!$isSuperadmin && !$isKadin) {
+            $this->user = $this->user->where('unit_id', $currentUser->unit_id);
+        }
+    }
+
+   protected function search($search)
+    {
+        $pattern = '%' . $search . '%';
+        
+        $this->user = $this->user->where(function ($query) use ($pattern) {
+            $query->where('name', 'like', $pattern)
+                ->orWhere('email', 'like', $pattern);
         });
     }
+
 
     protected function handleWith($relationship)
     {

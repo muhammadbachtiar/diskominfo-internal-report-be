@@ -65,11 +65,43 @@ class PermissionSeeder extends Seeder
             ['function' => 'attach-asset-report', 'apps' => 'assets'],
             ['function' => 'detach-asset-report', 'apps' => 'assets'],
 
+            // Asset Categories service
+            ['function' => 'view-asset-category', 'apps' => 'asset-categories'],
+            ['function' => 'add-asset-category', 'apps' => 'asset-categories'],
+            ['function' => 'edit-asset-category', 'apps' => 'asset-categories'],
+            ['function' => 'delete-asset-category', 'apps' => 'asset-categories'],
+            
+            // Locations service
+            ['function' => 'view-location', 'apps' => 'locations'],
+            ['function' => 'add-location', 'apps' => 'locations'],
+            ['function' => 'edit-location', 'apps' => 'locations'],
+            ['function' => 'delete-location', 'apps' => 'locations'],
+
+            // Report Categories service
+            ['function' => 'view-report-category', 'apps' => 'report-categories'],
+            ['function' => 'add-report-category', 'apps' => 'report-categories'],
+            ['function' => 'edit-report-category', 'apps' => 'report-categories'],
+            ['function' => 'delete-report-category', 'apps' => 'report-categories'],
+            
             // Units service
             ['function' => 'add-unit', 'apps' => 'units'],
             ['function' => 'edit-unit', 'apps' => 'units'],
             ['function' => 'delete-unit', 'apps' => 'units'],
             ['function' => 'view-unit', 'apps' => 'units'],
+
+            // Letters service
+            ['function' => 'view-letter', 'apps' => 'letters'],
+            ['function' => 'add-incoming-letter', 'apps' => 'letters'],
+            ['function' => 'add-outgoing-letter', 'apps' => 'letters'],
+            ['function' => 'edit-letter', 'apps' => 'letters'],
+            ['function' => 'delete-letter', 'apps' => 'letters'],
+            ['function' => 'analyze-letter', 'apps' => 'letters'],
+
+            // Classification service
+            ['function' => 'view-classification', 'apps' => 'classifications'],
+            ['function' => 'add-classification', 'apps' => 'classifications'],
+            ['function' => 'edit-classification', 'apps' => 'classifications'],
+            ['function' => 'delete-classification', 'apps' => 'classifications'],
         ];
 
         // Upsert by function, update apps to reflect microservice name

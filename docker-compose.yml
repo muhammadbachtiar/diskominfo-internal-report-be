@@ -2,25 +2,79 @@ services:
   internal_reporting:
     build:
       context: .
+      dockerfile: Dockerfile
     container_name: internal_reporting
     ports:
-      - "8000:8000" # port host:contain
+      - "8000:8000"
+    environment:
+      APP_ENV: ${APP_ENV}
+      APP_DEBUG: true
+      APP_URL: ${APP_URL}
+      DB_CONNECTION: ${DB_CONNECTION}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - ./storage:/app/storage:cached
-      - /var/www/template:/var/www/template
+      # - ./storage:/app/storage        # hanya storage yang di-mount (Production)
+      - .:/app                       # mount seluruh project (Development)
+      - /app/vendor                 # agar vendor tidak ter-overwrite (Development)
+      - /app/node_modules            # agar node_modules tidak ter-overwrite (Development)
     working_dir: /app
-    restart: unless-stopped
     command: >
       php artisan octane:frankenphp
-      --host=0.0.0.0
-      --port=8000
-      --workers=8
-      --max-requests=1000
+        --host=0.0.0.0
+        --port=8000
+        --workers=8
+        --max-requests=1000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   queue:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: internal_reporting_queue
-    command: sh -c "composer install --no-dev && php artisan queue:work --tries=3 --sleep=3"
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST}
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - ./:/app
+      - ./storage:/app/storage
+    working_dir: /app
+    command: >
+      sh -c "php artisan queue:work --tries=3 --sleep=3"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    container_name: internal_reporting_postgres
+    environment:
+      POSTGRES_DB: internal_reporting
+      POSTGRES_USER: internal_report_user
+      POSTGRES_PASSWORD: Kominfo@1234!@
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U laporan -d laporan"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:

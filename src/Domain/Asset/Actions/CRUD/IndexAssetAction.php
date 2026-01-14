@@ -15,22 +15,50 @@ class IndexAssetAction extends Action
     {
         CheckRolesAction::resolve()->execute('view-asset');
 
-        $query = Asset::query()->with('unit');
+        $query = Asset::query();
+
+        $this->handleWith($query, $filters);
 
         if ($status = Arr::get($filters, 'status')) {
-            $query->where('status', $status);
+            if (in_array($status, ['maintenance', 'retired'])) {
+                $query->where('status', $status);
+            } elseif ($status === 'available') {
+                $query->whereNull('location_id');
+            } elseif ($status === 'borrowed') {
+                $query->whereNotNull('location_id');
+            }
+        }
+
+        if ($locationId = Arr::get($filters, 'location_id')) {
+            $query->where('location_id', $locationId);
         }
 
         if ($unitId = Arr::get($filters, 'unit_id')) {
             $query->where('unit_id', $unitId);
         }
 
-        if ($search = Arr::get($filters, 'q')) {
+        if ($categoryId = Arr::get($filters, 'category_id')) {
+            $query->where('category_id', $categoryId);
+        }
+
+        if ($fromYear = Arr::get($filters, 'from')) {
+            $query->whereYear('purchased_at', '>=', $fromYear);
+        }
+
+        if ($toYear = Arr::get($filters, 'to')) {
+            $query->whereYear('purchased_at', '<=', $toYear);
+        }
+
+        if ($search = Arr::get($filters, 'search')) {
             $query->where(function ($builder) use ($search) {
-                $builder->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('code', 'like', '%' . $search . '%')
-                    ->orWhere('category', 'like', '%' . $search . '%')
-                    ->orWhere('serial_number', 'like', '%' . $search . '%');
+                $pattern = '%' . $search . '%';
+                $builder->where('name', 'like', $pattern)
+                    ->orWhere('code', 'like', $pattern)
+                    ->orWhere('category', 'like', $pattern)
+                    ->orWhere('serial_number', 'like', $pattern)
+                    ->orWhereHas('category', function ($q) use ($pattern) {
+                    $q->where('name', 'like', $pattern);
+                });
             });
         }
 
@@ -43,5 +71,21 @@ class IndexAssetAction extends Action
 
         return $query->paginate($perPage, ['*'], 'page', $page ? max(1, (int) $page) : null);
     }
+
+    protected function handleWith($query, array $filters): void
+    {
+        $mandatoryRelations = ['currentLoan', 'category'];
+
+        $query->with($mandatoryRelations);
+
+        if ($with = Arr::get($filters, 'with')) {
+            $requestedRelations = is_string($with) ? explode(',', $with) : $with;
+
+            if (in_array('unit', $requestedRelations)) {
+                $query->with('unit');
+            }
+        }
+    }
+
 }
 

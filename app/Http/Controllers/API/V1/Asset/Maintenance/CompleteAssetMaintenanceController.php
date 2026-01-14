@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\API\V1\Asset\Maintenance;
 
+use Domain\Asset\Services\MarkAssetMaintenanceService;
 use Domain\Shared\Actions\CheckRolesAction;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use Infra\Asset\Models\AssetMaintenance;
 use Infra\Shared\Controllers\BaseController;
 use Infra\Shared\Enums\HttpStatus;
 use InvalidArgumentException;
@@ -20,16 +20,13 @@ class CompleteAssetMaintenanceController extends BaseController
 
             $data = $request->validate([
                 'actor_id' => ['nullable', 'integer'],
-                'note' => ['nullable', 'string'],
+                'description' => ['nullable', 'string'],
             ]);
 
-                        $maintenance = AssetMaintenance::where('asset_id', $asset)
-                ->whereNull('finished_at')
-                ->firstOrFail();
-
-            $maintenance->markAsCompleted(
-                $data['note'] ?? null,
-                $data['actor_id'] ?? auth()->id()
+            $maintenance = MarkAssetMaintenanceService::resolve()->complete(
+                $asset,
+                $data['actor_id'] ?? null,
+                $data['description'] ?? null
             );
 
             return $this->resolveForSuccessResponseWith('Maintenance completed', $maintenance);

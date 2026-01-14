@@ -31,7 +31,11 @@ class Asset extends BaseModel
     {
         return $this->hasMany(AssetLoan::class);
     }
-
+    
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(AssetCategory::class, 'category_id');
+    }
     public function currentLoan(): HasOne
     {
         return $this->hasOne(AssetLoan::class)->whereNull('returned_at');
@@ -52,5 +56,10 @@ class Asset extends BaseModel
         return $this->belongsToMany(Report::class, 'report_assets', 'asset_id', 'report_id')
             ->withPivot('note')
             ->withTimestamps();
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(AssetAttachment::class);
     }
 }

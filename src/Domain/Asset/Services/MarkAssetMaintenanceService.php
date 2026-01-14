@@ -44,8 +44,12 @@ class MarkAssetMaintenanceService extends Action
         }
 
         $activeMaintenance = $this->maintenances->findActiveByAsset($assetId);
-        if ($activeMaintenance) {
+        if ($activeMaintenance || $asset->status === AssetStatus::Maintenance) {
             throw new InvalidArgumentException('Asset already has active maintenance.');
+        }
+
+        if($returnToActiveLocation && $asset->locationId !== null) {
+            ReturnAssetService::resolve()->execute($assetId, auth()->id() ?? null, $description ?? null);
         }
 
         $maintenance = new AssetMaintenance(
@@ -65,7 +69,9 @@ class MarkAssetMaintenanceService extends Action
             status: AssetStatus::Maintenance,
             changedAt: CarbonImmutable::now(),
             changedBy: auth()->id(),
-            note: 'Asset moved to maintenance',
+            note: $description 
+                ? "$description"
+                : 'Asset moved to maintenance',
         ));
 
         AuditLogger::log('asset.maintenance.start', 'asset_maintenances', $maintenance->id, [
@@ -84,7 +90,7 @@ class MarkAssetMaintenanceService extends Action
         return $maintenance;
     }
 
-    public function complete(string $assetId, ?int $actorId = null, ?string $note = null): AssetMaintenance
+    public function complete(string $assetId, ?int $actorId = null, string $description): AssetMaintenance
     {
         $asset = $this->assets->find($assetId);
         if (! $asset) {
@@ -92,26 +98,24 @@ class MarkAssetMaintenanceService extends Action
         }
 
         $maintenance = $this->maintenances->findActiveByAsset($assetId);
-        if (! $maintenance) {
+        if (! $maintenance || $asset->status !== AssetStatus::Maintenance) {
             throw new InvalidArgumentException('Asset has no active maintenance entry.');
         }
 
         $completed = $maintenance->markCompleted(CarbonImmutable::now());
-        $completed->completion_note = $note;
+        $completed->completion_note = $description;
         $completed->completed_by = $actorId ?? auth()->id();
         $completed = $this->maintenances->save($completed);
 
-        // If return_to_active_location is false, set status to available but keep current load
-        $newStatus = $maintenance->return_to_active_location ? AssetStatus::Borrowed : AssetStatus::Available;
-        $this->assets->updateStatus($assetId, $newStatus);
+        $this->assets->updateStatus($assetId,  AssetStatus::Available);
 
         $this->statusHistories->record(new AssetStatusHistory(
             id: (string) Uuid::uuid7(),
             assetId: $assetId,
-            status: AssetStatus::Available,
+            status: AssetStatus::Completed,
             changedAt: CarbonImmutable::now(),
             changedBy: $actorId ?? auth()->id(),
-            note: 'Maintenance completed',
+            note:  $description ? "$description" : 'Maintenance completed'
         ));
 
         AuditLogger::log('asset.maintenance.complete', 'asset_maintenances', $maintenance->id, [

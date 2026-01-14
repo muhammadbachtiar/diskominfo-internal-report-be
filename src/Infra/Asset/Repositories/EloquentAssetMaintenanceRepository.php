@@ -17,7 +17,7 @@ class EloquentAssetMaintenanceRepository implements AssetMaintenanceRepositoryIn
         $model->description = $maintenance->description;
         $model->started_at = $maintenance->startedAt->toDateTimeString();
         $model->finished_at = $maintenance->finishedAt?->toDateTimeString();
-        $model->performed_by = $maintenance->performedBy;
+        $model->performed_by_id = $maintenance->performedBy;
         $model->return_to_active_location = $maintenance->returnToActiveLocation;
         $model->save();
 
@@ -53,7 +53,7 @@ class EloquentAssetMaintenanceRepository implements AssetMaintenanceRepositoryIn
             description: (string) $model->description,
             startedAt: CarbonImmutable::parse($model->started_at),
             finishedAt: $model->finished_at ? CarbonImmutable::parse($model->finished_at) : null,
-            performedBy: $model->performed_by,
+            performedBy: $model->performed_by_id,
             returnToActiveLocation: $model->return_to_active_location === null
                 ? true
                 : (bool) $model->return_to_active_location,

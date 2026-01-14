@@ -14,6 +14,7 @@ class CreateReportController extends BaseController
     public function __invoke(Request $req)
     {
         try {
+            $this->authorize('create', \Infra\Report\Models\Report::class);
             $data = $req->validate([
                 'title' => 'required|string',
                 'description' => 'nullable|string',
@@ -24,6 +25,12 @@ class CreateReportController extends BaseController
                 'accuracy' => 'nullable|numeric',
                 'event_at' => 'nullable|date',
                 'unit_id' => 'nullable|uuid',
+                'category_id' => 'nullable|uuid',
+                'user_ids' => 'nullable|array',
+                'user_ids.*' => 'integer|exists:users,id',
+                'asset_ids' => 'nullable|array',
+                'asset_ids.*.asset_id' => 'required|uuid|exists:assets,id',
+                'asset_ids.*.note' => 'nullable|string',
             ]);
             $report = CreateDraftReportAction::resolve()->execute($data);
             return $this->resolveForSuccessResponseWith('Draft created', $report, HttpStatus::Created);

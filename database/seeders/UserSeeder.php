@@ -9,27 +9,31 @@ use Infra\User\Models\UserRoles\UserRoles;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $user = User::firstOrCreate([
+        // Create Super Admin user
+        $superAdminUser = User::firstOrCreate([
             'email' => 'admin@admin.com',
         ], [
             'name' => 'Super Admin',
             'password' => bcrypt('sekolahcerdas'),
         ]);
 
-        // Ensure roles exist
+        // Create Kadin user
+        $kadinUser = User::firstOrCreate([
+            'email' => 'kadin@admin.com',
+        ], [
+            'name' => 'Kepala Dinas',
+            'password' => bcrypt('Kominfo12345'),
+        ]);
+
         $super = Roles::firstOrCreate(['nama' => 'Super Admin']);
         $admin = Roles::firstOrCreate(['nama' => 'admin']);
         $kadin = Roles::firstOrCreate(['nama' => 'kadin']);
-        $kabid = Roles::firstOrCreate(['nama' => 'kabid']);
-        $pegawai = Roles::firstOrCreate(['nama' => 'pegawai']);
 
-        // Attach admin roles to super admin user
-        UserRoles::firstOrCreate(['user_id' => $user->id, 'roles_id' => $super->id]);
-        UserRoles::firstOrCreate(['user_id' => $user->id, 'roles_id' => $admin->id]);
+        UserRoles::firstOrCreate(['user_id' => $superAdminUser->id, 'roles_id' => $super->id]);
+        UserRoles::firstOrCreate(['user_id' => $superAdminUser->id, 'roles_id' => $admin->id]);
+
+        UserRoles::firstOrCreate(['user_id' => $kadinUser->id, 'roles_id' => $kadin->id]);
     }
 }

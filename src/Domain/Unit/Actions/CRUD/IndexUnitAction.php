@@ -21,9 +21,9 @@ class IndexUnitAction extends Action
         if (!empty($search)) {
             $prefix = rtrim($search, '%');
             $this->query->where(function ($q) use ($prefix, $search) {
-                $q->where('name', 'ilike', $prefix.'%')
-                  ->orWhere('code', 'ilike', $prefix.'%')
-                  ->orWhere('name', 'ilike', '%'.$search.'%');
+                $q->where('name', 'like', $prefix.'%')
+                  ->orWhere('code', 'like', $prefix.'%')
+                  ->orWhere('name', 'like', '%'.$search.'%');
             });
         }
 

@@ -14,7 +14,7 @@ class IndexAssetCategoryController extends BaseController
     public function __invoke(Request $request)
     {
         try {
-            CheckRolesAction::resolve()->execute('view-asset-categories');
+            CheckRolesAction::resolve()->execute('view-asset-category');
 
             $query = AssetCategory::query();
 
@@ -23,7 +23,7 @@ class IndexAssetCategoryController extends BaseController
             }
 
             if ($request->query('select') === 'yes') {
-                $data = $query->limit(100)->get();
+                $data = $query->select('id', 'name')->limit(100)->get();
                 return $this->resolveForSuccessResponseWith('Categories', $data);
             }
 

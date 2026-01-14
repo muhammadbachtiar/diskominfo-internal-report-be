@@ -15,7 +15,7 @@ class CreateAssetCategoryController extends BaseController
     public function __invoke(Request $request)
     {
         try {
-            CheckRolesAction::resolve()->execute('manage-asset-categories');
+            CheckRolesAction::resolve()->execute('add-asset-category');
 
             $data = $request->validate([
                 'name' => ['required', 'string'],

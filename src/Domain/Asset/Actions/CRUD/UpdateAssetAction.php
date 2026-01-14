@@ -56,6 +56,8 @@ class UpdateAssetAction extends Action
         $asset->name = $payload['name'] ?? $asset->name;
         $asset->category = $payload['category'] ?? $asset->category;
         $asset->serialNumber = $payload['serial_number'] ?? $asset->serialNumber;
+        $asset->categoryId = $payload['category_id'] ?? $asset->categoryId;
+        $asset->locationId = $payload['location_id'] ?? null;
         $asset->unitId = $payload['unit_id'] ?? $asset->unitId;
         $asset->purchasePrice = $payload['purchase_price'] ?? $asset->purchasePrice;
         $asset->purchasedAt = ! empty($payload['purchased_at'])

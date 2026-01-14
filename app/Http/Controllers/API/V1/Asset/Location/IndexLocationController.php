@@ -14,7 +14,7 @@ class IndexLocationController extends BaseController
     public function __invoke(Request $request)
     {
         try {
-            CheckRolesAction::resolve()->execute('view-locations');
+            CheckRolesAction::resolve()->execute('view-location');
 
             $query = Location::query();
 
