@@ -15,11 +15,11 @@ class AnalyzeLetterAction extends Action
         $this->geminiService = $geminiService;
     }
 
-    public function execute(UploadedFile $file)
+    public function execute(UploadedFile $file, string $letterType)
     {
         $mimeType = $file->getMimeType();
         $content = $file->get();
 
-        return $this->geminiService->analyze($content, $mimeType);
+        return $this->geminiService->analyze($content, $mimeType, $letterType);
     }
 }

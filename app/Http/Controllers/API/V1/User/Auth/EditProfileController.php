@@ -2,21 +2,22 @@
 
 namespace App\Http\Controllers\API\V1\User\Auth;
 
+use App\Http\Requests\UpdateProfileRequest;
 use Domain\User\Actions\Auth\UpdateAuthAction;
-use Illuminate\Http\Request;
 use Infra\Shared\Controllers\BaseController;
 
 class EditProfileController extends BaseController
 {
-    public function __invoke(Request $req)
+    public function __invoke(UpdateProfileRequest $req)
     {
         try {
-
-            $data = UpdateAuthAction::resolve()->execute($req->all());
+            $data = $req->only(['name', 'email', 'password', 'password_confirmation']);
+            
+            $user = UpdateAuthAction::resolve()->execute($data);
 
             return $this->resolveForSuccessResponseWith(
                 message: 'Profile updated successfully',
-                data: $data
+                data: $user
             );
         } catch (\Throwable $th) {
             return $this->resolveForFailedResponseWith(

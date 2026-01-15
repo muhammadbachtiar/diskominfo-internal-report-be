@@ -189,6 +189,15 @@ components:
         id: { type: integer }
         name: { type: string }
         email: { type: string, format: email }
+        avatar: 
+          type: string
+          nullable: true
+          description: S3 object key for user avatar (e.g., "avatars/abc123.jpg")
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Public URL to access the avatar image
         unit_id: { type: string, format: uuid, nullable: true }
         created_at: { type: string, format: date-time, nullable: true }
         updated_at: { type: string, format: date-time, nullable: true }
@@ -492,6 +501,33 @@ components:
             type: string
             format: uuid
             description: ID of the asset to print label for
+    UpdateProfileRequest:
+      type: object
+      description: Request schema for updating user profile. All fields are optional for partial updates.
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          description: User's full name
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: User's email address (must be unique)
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: New password (requires password_confirmation)
+        password_confirmation:
+          type: string
+          format: password
+          minLength: 8
+          description: Password confirmation (required when updating password)
+        avatar:
+          type: string
+          format: binary
+          description: Avatar image file (JPEG, JPG, PNG, GIF) - Max 2MB
     LoginRequest:
       type: object
       required:
@@ -535,12 +571,19 @@ components:
         unit: { $ref: "#/components/schemas/Unit" }
     LetterAnalyzeRequest:
       type: object
-      required: [file]
+      required: [file, type]
       properties:
         file:
           type: string
           format: binary
           description: Letter file (PDF, JPG, JPEG, PNG) - Max 10MB
+        type:
+          type: string
+          enum: [incoming, outgoing]
+          description: |
+            Type of letter for AI analysis:
+            - `incoming`: Surat Masuk - AI will extract sender from letterhead (kop surat)
+            - `outgoing`: Surat Keluar - AI will extract recipient from 'Yth.' section
     LetterAnalyzeResponse:
       type: object
       properties:
@@ -1076,7 +1119,11 @@ paths:
           }
     put:
       tags: [Auth]
-      summary: Update current user profile
+      summary: Update current user profile (full update)
+      description: |
+        Updates the authenticated user's profile. All fields are optional - supports partial updates.
+        If uploading an avatar, use multipart/form-data. Otherwise, use application/json.
+        Old avatar will be automatically deleted when uploading a new one.
       requestBody:
         required: true
         content:
@@ -1084,22 +1131,105 @@ paths:
             schema:
               type: object
               properties:
-                name: { type: string }
-                email: { type: string, format: email }
-                password: { type: string, format: password }
+                name: { type: string, maxLength: 255 }
+                email: { type: string, format: email, maxLength: 255 }
+                password: { type: string, format: password, minLength: 8 }
+                password_confirmation: { type: string, format: password, minLength: 8 }
+            examples:
+              updateNameAndEmail:
+                summary: Update name and email
+                value:
+                  name: "John Doe"
+                  email: "john.doe@example.com"
+              updatePassword:
+                summary: Update password only
+                value:
+                  password: "newpassword123"
+                  password_confirmation: "newpassword123"
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name: 
+                  type: string
+                email: 
+                  type: string
+                  format: email
+                password: 
+                  type: string
+                  format: password
+                password_confirmation: 
+                  type: string
+                  format: password
+                avatar:
+                  type: string
+                  format: binary
+            encoding:
+              avatar:
+                contentType: image/jpeg, image/jpg, image/png, image/gif
+                style: form
       responses:
         "200":
-          {
-            description: OK,
-            content:
-              {
-                application/json:
-                  { schema: { $ref: "#/components/schemas/Envelope" } },
-              },
-          }
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+              examples:
+                success:
+                  summary: Successful update
+                  value:
+                    success: true
+                    message: "Profile updated successfully"
+                    data:
+                      id: 1
+                      name: "John Doe"
+                      email: "john.doe@example.com"
+                      avatar: "avatars/abc123xyz.jpg"
+                      avatar_url: "https://api-minio.muaraenimkab.go.id/egovreportingmuaraenim/avatars/abc123xyz.jpg"
+                      unit_id: null
+                      created_at: "2024-01-15T10:00:00.000000Z"
+                      updated_at: "2024-01-15T10:30:00.000000Z"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  errors: { type: object, additionalProperties: { type: array, items: { type: string } } }
+              examples:
+                validationError:
+                  summary: Validation failed
+                  value:
+                    message: "The given data was invalid."
+                    errors:
+                      email: ["The email has already been taken."]
+                      password: ["The password confirmation does not match."]
+                      avatar: ["The avatar must not be greater than 2048 kilobytes."]
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+              example:
+                message: "Unauthenticated."
     patch:
       tags: [Auth]
       summary: Partially update current user profile
+      description: |
+        Updates specific fields of the authenticated user's profile. All fields are optional.
+        If uploading an avatar, use multipart/form-data. Otherwise, use application/json.
+        Old avatar will be automatically deleted when uploading a new one.
+        
+        **Validation Rules:**
+        - name: max 255 characters
+        - email: must be valid email and unique (except current user)
+        - password: min 8 characters, requires password_confirmation
+        - avatar: image file (jpeg, jpg, png, gif), max 2MB
       requestBody:
         required: true
         content:
@@ -1107,19 +1237,151 @@ paths:
             schema:
               type: object
               properties:
-                name: { type: string }
-                email: { type: string, format: email }
-                password: { type: string, format: password }
+                name: { type: string, maxLength: 255 }
+                email: { type: string, format: email, maxLength: 255 }
+                password: { type: string, format: password, minLength: 8 }
+                password_confirmation: { type: string, format: password, minLength: 8 }
+            examples:
+              updateNameOnly:
+                summary: Update name only
+                value:
+                  name: "New Name"
+              updateEmailOnly:
+                summary: Update email only
+                value:
+                  email: "newemail@example.com"
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name: 
+                  type: string
+                email: 
+                  type: string
+                  format: email
+                password: 
+                  type: string
+                  format: password
+                password_confirmation: 
+                  type: string
+                  format: password
+                avatar:
+                  type: string
+                  format: binary
+            encoding:
+              avatar:
+                contentType: image/jpeg, image/jpg, image/png, image/gif
+                style: form
       responses:
         "200":
-          {
-            description: OK,
-            content:
-              {
-                application/json:
-                  { schema: { $ref: "#/components/schemas/Envelope" } },
-              },
-          }
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+              examples:
+                success:
+                  summary: Successful update
+                  value:
+                    success: true
+                    message: "Profile updated successfully"
+                    data:
+                      id: 1
+                      name: "Updated Name"
+                      email: "user@example.com"
+                      avatar: "avatars/xyz789.jpg"
+                      avatar_url: "https://api-minio.muaraenimkab.go.id/egovreportingmuaraenim/avatars/xyz789.jpg"
+                      unit_id: null
+                      created_at: "2024-01-15T10:00:00.000000Z"
+                      updated_at: "2024-01-15T10:35:00.000000Z"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  errors: { type: object, additionalProperties: { type: array, items: { type: string } } }
+              examples:
+                passwordMismatch:
+                  summary: Password confirmation mismatch
+                  value:
+                    message: "The given data was invalid."
+                    errors:
+                      password: ["The password confirmation does not match."]
+                avatarTooLarge:
+                  summary: Avatar file too large
+                  value:
+                    message: "The given data was invalid."
+                    errors:
+                      avatar: ["The avatar must not be greater than 2048 kilobytes."]
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+              example:
+                message: "Unauthenticated."
+  /auth/avatar:
+    post:
+      tags: [Auth]
+      summary: Upload user avatar
+      description: |
+        Upload a new avatar image for the authenticated user.
+        Old avatar will be automatically deleted from S3.
+        Returns updated user data with new avatar_url.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [avatar]
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+                  description: Avatar image (JPEG, JPG, PNG, GIF) - Max 2MB
+      responses:
+        "200":
+          description: Avatar uploaded successfully
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+              example:
+                success: true
+                message: "Avatar uploaded successfully"
+                data:
+                  id: 1
+                  name: "John Doe"
+                  email: "john@example.com"
+                  avatar: "avatars/abc123xyz.jpg"
+                  avatar_url: "https://api-minio.muaraenimkab.go.id/egovreportingmuaraenim/avatars/abc123xyz.jpg"
+                  unit_id: null
+                  created_at: "2024-01-15T10:00:00.000000Z"
+                  updated_at: "2024-01-15T12:00:00.000000Z"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  errors: { type: object }
+              example:
+                message: "The given data was invalid."
+                errors:
+                  avatar: ["The avatar must be an image.", "The avatar must not be greater than 2048 kilobytes."]
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              example:
+                message: "Unauthenticated."
   /upload:
     post:
       tags: [Storage]
@@ -2583,10 +2845,15 @@ paths:
     post:
       tags: [Letters]
       operationId: analyzeLetterWithAI
-      summary: Analyze letter using Gemini AI
+      summary: Analyze letter using Gemini AI (Dynamic extraction)
       description: |
-        Upload a letter file (PDF or image) to extract metadata using Gemini 1.5 Flash AI.
-        The AI will extract: pengirim, tahun, nomor_surat, perihal, sifat, deskripsi.
+        Upload a letter file (PDF or image) and specify letter type to extract metadata using Gemini 2.5 Flash AI.
+        
+        **Dynamic Extraction based on Letter Type:**
+        - **type=incoming** (Surat Masuk): AI extracts SENDER from letterhead (kop surat)
+        - **type=outgoing** (Surat Keluar): AI extracts RECIPIENT from 'Yth.' section
+        
+        **Extracted fields:** sender_receiver, date_of_letter, letter_number, year, subject, classification, description
       requestBody:
         required: true
         content:

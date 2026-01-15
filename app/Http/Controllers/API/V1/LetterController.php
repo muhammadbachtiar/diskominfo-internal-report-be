@@ -20,10 +20,15 @@ class LetterController extends BaseController
             CheckRolesAction::resolve()->execute('analyze-letter');
             
             $request->validate([
-                'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240', 
+                'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+                'type' => 'required|string|in:incoming,outgoing', // incoming = surat masuk, outgoing = surat keluar
             ]);
 
-            $result = $action->execute($request->file('file'));
+            $result = $action->execute(
+                $request->file('file'),
+                $request->input('type')
+            );
+            
             return $this->resolveForSuccessResponseWith('Letter analysis completed', $result);
         } catch (ValidationException $th) {
             return $this->resolveForFailedResponseWith('Validation Error', $th->errors(), HttpStatus::UnprocessableEntity);

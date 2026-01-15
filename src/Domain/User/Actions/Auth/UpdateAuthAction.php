@@ -12,10 +12,28 @@ class UpdateAuthAction extends Action
             throw new \Exception('User not authenticated');
         }
 
-        if (isset($data['password'])) {
-            $data['password'] = bcrypt($data['password']);
+        // Prepare update data (only fields that are present)
+        $updateData = [];
+
+        if (isset($data['name'])) {
+            $updateData['name'] = $data['name'];
         }
-        $user->update($data);
+
+        if (isset($data['email'])) {
+            $updateData['email'] = $data['email'];
+        }
+
+        if (isset($data['password']) && !empty($data['password'])) {
+            $updateData['password'] = bcrypt($data['password']);
+        }
+
+        // Only update if there's data to update
+        if (!empty($updateData)) {
+            $user->update($updateData);
+        }
+
+        // Refresh user data
+        $user->refresh();
 
         return $user;
     }

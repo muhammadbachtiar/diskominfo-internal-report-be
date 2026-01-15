@@ -45,6 +45,7 @@ use App\Http\Controllers\API\V1\Roles\CRUD\IndexRoleController;
 use App\Http\Controllers\API\V1\Roles\CRUD\UpdateRoleController;
 use App\Http\Controllers\API\V1\Shared\UploadPhotoController;
 use App\Http\Controllers\API\V1\User\Auth\EditProfileController;
+use App\Http\Controllers\API\V1\User\Auth\UploadAvatarController;
 use App\Http\Controllers\API\V1\User\Auth\GetDataAuthController;
 use App\Http\Controllers\API\V1\User\Auth\LoginController;
 use App\Http\Controllers\API\V1\User\CRUD\CreateUserController;
@@ -89,6 +90,7 @@ Route::middleware(['auth:api'])->group(function () {
     Route::get(uri: 'auth', action: GetDataAuthController::class);
     Route::put(uri: 'auth', action: EditProfileController::class);
     Route::patch(uri: 'auth', action: EditProfileController::class);
+    Route::post(uri: 'auth/avatar', action: UploadAvatarController::class);
 });
 Route::post(uri: 'upload', action: UploadPhotoController::class);
 Route::prefix('user')->middleware(['auth:api'])->group(function () {

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 
 class GeminiLetterAnalysisService
 {
-    public function analyze($fileData, $mimeType)
+    public function analyze($fileData, $mimeType, $letterType = 'incoming')
     {
         $apiKey = env('GEMINI_API_KEY');
         
@@ -22,11 +22,20 @@ class GeminiLetterAnalysisService
             ? " Untuk 'sifat', prioritaskan memilih dari daftar berikut jika cocok: [{$availableClassifications}]."
             : "";
 
+        // Dynamic prompt based on letter type
+        if ($letterType === 'incoming') {
+            // Surat Masuk: ambil pengirim dari kop surat
+            $senderReceiverRule = "sender_receiver: Surat ini adalah SURAT MASUK. Cari nama instansi/organisasi PENGIRIM di Kop Surat (bagian paling atas dengan logo dan nama instansi).";
+        } else {
+            // Surat Keluar: ambil penerima dari bagian 'Yth.'
+            $senderReceiverRule = "sender_receiver: Surat ini adalah SURAT KELUAR. Cari PENERIMA di bagian 'Yth.' (Yth: [Nama Penerima]) yang biasanya terletak di kiri atas setelah bagian Nomor, Hal, Perihal, dll. Jika ada beberapa baris setelah 'Yth.', ambil semuanya.";
+        }
+
         $systemPrompt = "Anda adalah asisten administrasi digital yang ahli membaca surat resmi Indonesia. Tugas Anda adalah mengekstrak data dari gambar/PDF surat yang diberikan.
 
 Aturan Ekstraksi:
 
-sender_receiver: Cari nama instansi/organisasi di Kop Surat (bagian paling atas).
+{$senderReceiverRule}
 
 date_of_letter: Cari tanggal surat. Ubah formatnya menjadi 'YYYY-MM-DD' (ISO 8601). Contoh: jika tertulis '13 Januari 2024', ubah menjadi '2024-01-13'.
 

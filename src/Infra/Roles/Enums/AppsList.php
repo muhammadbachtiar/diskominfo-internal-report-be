@@ -22,4 +22,6 @@ enum AppsList: string
     case Locations = 'locations';
     case AssetCategories = 'asset-categories';
     case ReportCategories = 'report-categories';
+    case Letters = 'letters';
+    case Classifications = 'classifications';
 }
