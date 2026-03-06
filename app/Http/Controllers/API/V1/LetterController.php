@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Infra\Shared\Controllers\BaseController;
 use Infra\Shared\Enums\HttpStatus;
+use App\Exports\LettersExport;
+use Maatwebsite\Excel\Facades\Excel;
+use Carbon\Carbon;
 
 class LetterController extends BaseController
 {
@@ -124,10 +127,65 @@ class LetterController extends BaseController
                 });
             }
 
-            $paginated = $query->paginate(15);
+            $pageSize = $request->input('page_size', 10);
+            $paginated = $query->paginate($pageSize);
             return $this->resolveForSuccessResponseWithPage('Letters', $paginated);
         } catch (ValidationException $th) {
             return $this->resolveForFailedResponseWith('Validation Error', $th->errors(), HttpStatus::UnprocessableEntity);
+        } catch (\Throwable $th) {
+            return $this->resolveForFailedResponseWith($th->getMessage());
+        }
+    }
+
+    public function export(Request $request)
+    {
+        try {
+            CheckRolesAction::resolve()->execute('view-letter');
+            
+            $query = Letter::with(['classification', 'unit', 'creator']);
+
+            if ($request->has('unit_id')) {
+                $query->byUnit($request->unit_id);
+            }
+
+            if ($request->has('type')) {
+                $query->where('type', $request->type);
+            }
+            
+            if ($request->has('classification_id')) {
+                $query->where('classification_id', $request->classification_id);
+            }
+
+            if ($request->has('from') && $request->has('to')) {
+                $query->whereBetween('date_of_letter', [$request->from, $request->to]);
+            } elseif ($request->has('from')) {
+                $query->where('date_of_letter', '>=', $request->from);
+            } elseif ($request->has('to')) {
+                $query->where('date_of_letter', '<=', $request->to);
+            }
+
+            if ($request->has('year')) {
+                $query->where('year', $request->year);
+            }
+
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('subject', 'like', "%{$search}%")
+                      ->orWhere('letter_number', 'like', "%{$search}%")
+                      ->orWhere('sender_receiver', 'like', "%{$search}%");
+                });
+            }
+
+            // Download file
+            $format = $request->input('format', 'xlsx');
+            $fileName = 'letters_export_' . Carbon::now()->format('Ymd_His');
+
+            if ($format === 'csv') {
+                return Excel::download(new LettersExport($query), $fileName . '.csv', \Maatwebsite\Excel\Excel::CSV);
+            }
+
+            return Excel::download(new LettersExport($query), $fileName . '.xlsx', \Maatwebsite\Excel\Excel::XLSX);
         } catch (\Throwable $th) {
             return $this->resolveForFailedResponseWith($th->getMessage());
         }

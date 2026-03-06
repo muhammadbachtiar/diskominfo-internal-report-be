@@ -250,17 +250,18 @@ Route::prefix('letters')->middleware(['auth:api'])->group(function () {
     Route::post('analyze', [LetterController::class, 'analyze']);
     Route::post('incoming', [LetterController::class, 'storeIncoming']);
     Route::post('outgoing', [LetterController::class, 'storeOutgoing']);
+    Route::get('export', [LetterController::class, 'export']);
     Route::get('', [LetterController::class, 'index']);
-    Route::get('{id}', [LetterController::class, 'show']);
-    Route::put('{id}', [LetterController::class, 'update']);
-    Route::delete('{id}', [LetterController::class, 'destroy']);
+    Route::get('{id}', [LetterController::class, 'show'])->where('id', '[0-9]+');
+    Route::put('{id}', [LetterController::class, 'update'])->where('id', '[0-9]+');
+    Route::delete('{id}', [LetterController::class, 'destroy'])->where('id', '[0-9]+');
 });
 
 // Classifications
 Route::prefix('classifications')->middleware(['auth:api'])->group(function () {
     Route::get('', [ClassificationController::class, 'index']);
     Route::post('', [ClassificationController::class, 'store']);
-    Route::get('{id}', [ClassificationController::class, 'show']);
-    Route::put('{id}', [ClassificationController::class, 'update']);
-    Route::delete('{id}', [ClassificationController::class, 'destroy']);
+    Route::get('{id}', [ClassificationController::class, 'show'])->where('id', '[0-9]+');
+    Route::put('{id}', [ClassificationController::class, 'update'])->where('id', '[0-9]+');
+    Route::delete('{id}', [ClassificationController::class, 'destroy'])->where('id', '[0-9]+');
 });

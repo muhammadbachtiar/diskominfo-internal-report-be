@@ -2935,6 +2935,45 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Envelope"
+  /letters/export:
+    get:
+      tags: [Letters]
+      operationId: exportLetters
+      summary: Export letters as CSV/XLSX
+      parameters:
+        - in: query
+          name: unit_id
+          schema: { type: string, format: uuid }
+          description: Filter by unit ID
+        - in: query
+          name: type
+          schema: { type: string, enum: [incoming, outgoing] }
+          description: Filter by letter type
+        - in: query
+          name: classification_id
+          schema: { type: string }
+        - in: query
+          name: year
+          schema: { type: integer }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: format
+          schema: { type: string, enum: [csv, xlsx], default: xlsx }
+      responses:
+        "200":
+          description: Export file
+          content:
+            text/csv: { schema: { type: string, format: binary } }
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              { schema: { type: string, format: binary } }
   /letters:
     get:
       tags: [Letters]
