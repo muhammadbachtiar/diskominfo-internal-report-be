@@ -35,6 +35,8 @@ use App\Http\Controllers\API\V1\Asset\Maintenance\CompleteAssetMaintenanceContro
 use App\Http\Controllers\API\V1\Asset\Maintenance\StartAssetMaintenanceController;
 use App\Http\Controllers\API\V1\Asset\Report\AttachAssetToReportController;
 use App\Http\Controllers\API\V1\Asset\Status\RetireAssetController;
+use App\Http\Controllers\API\V1\Asset\ImportAssetController;
+use App\Http\Controllers\API\V1\Asset\ImportAssetTemplateController;
 use App\Http\Controllers\API\V1\Permission\Apps\IndexAppsListController;
 use App\Http\Controllers\API\V1\Permission\CRUD\IndexPermissionController;
 use App\Http\Controllers\API\V1\Report\Category\UpdateReportCategoryController;
@@ -158,6 +160,8 @@ Route::prefix('report-categories')->middleware(['auth:api'])->group(function () 
 });
 
 Route::prefix('assets')->middleware(['auth:api'])->group(function () {
+    Route::post('import', ImportAssetController::class);
+    Route::get('import/template', ImportAssetTemplateController::class);
     Route::get('', IndexAssetController::class);
     Route::post('', CreateAssetController::class);
     Route::post('handover/print', GenerateAssetHandoverPdfController::class);

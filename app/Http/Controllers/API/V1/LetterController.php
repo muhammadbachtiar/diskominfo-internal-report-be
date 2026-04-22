@@ -126,6 +126,10 @@ class LetterController extends BaseController
                       ->orWhere('sender_receiver', 'like', "%{$search}%");
                 });
             }
+            $sortBy = $request->input('sort_by', 'date_of_letter');
+            $sortDir = $request->input('sort_dir', 'desc');
+            
+            $query->orderBy($sortBy, strtolower($sortDir) === 'asc' ? 'asc' : 'desc');
 
             $pageSize = $request->input('page_size', 10);
             $paginated = $query->paginate($pageSize);
@@ -176,6 +180,12 @@ class LetterController extends BaseController
                       ->orWhere('sender_receiver', 'like', "%{$search}%");
                 });
             }
+
+            // Secara default urutkan berdasarkan date_of_letter paling terbaru (DESC)
+            $sortBy = $request->input('sort_by', 'date_of_letter');
+            $sortDir = $request->input('sort_dir', 'desc');
+            
+            $query->orderBy($sortBy, strtolower($sortDir) === 'asc' ? 'asc' : 'desc');
 
             // Download file
             $format = $request->input('format', 'xlsx');

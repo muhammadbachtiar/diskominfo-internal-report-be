@@ -25,7 +25,7 @@ class AuditLogMiddleware
                 entityId: $entityId,
                 diff: [
                     'path' => $request->path(),
-                    'status' => $response->status(),
+                    'status' => method_exists($response, 'getStatusCode') ? $response->getStatusCode() : $response->status,
                     'query' => $request->query(),
                 ]
             );

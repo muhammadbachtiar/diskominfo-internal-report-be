@@ -28,11 +28,11 @@ services:
         --port=8000
         --workers=8
         --max-requests=1000
-    # depends_on:
-    #   postgres:
-    #     condition: service_healthy
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8000/health || exit 1" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8000/api/v1/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -71,7 +71,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U laporan -d laporan" ]
+      test: [ "CMD-SHELL", "pg_isready -U internal_report_user -d internal_reporting" ]
       interval: 10s
       timeout: 5s
       retries: 5

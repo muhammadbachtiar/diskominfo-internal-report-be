@@ -8,17 +8,17 @@ ENV SERVER_NAME="localhost"
 RUN apt-get update && apt-get install -y \
     ca-certificates curl unzip git gnupg2 ghostscript \
     && install-php-extensions \
-        bcmath \
-        pdo_pgsql \
-        pdo_mysql \
-        xml \
-        mbstring \
-        zip \
-        curl \
-        pcntl \
-        gd \
-        exif \
-        imagick \
+    bcmath \
+    pdo_pgsql \
+    pdo_mysql \
+    xml \
+    mbstring \
+    zip \
+    curl \
+    pcntl \
+    gd \
+    exif \
+    imagick \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer directly
@@ -47,13 +47,14 @@ RUN php artisan config:cache
 RUN php artisan route:cache
 RUN php artisan view:cache
 RUN php artisan key:generate
+RUN php artisan passport:keys --force
 RUN php artisan optimize:clear
 # RUN php artisan migrate --force
 # RUN  php artisan passport:install
 
 
 
-  # Aktifkan PHP production config
+# Aktifkan PHP production config
 COPY ./php.ini $PHP_INI_DIR/php.ini
 
 # Jalankan FrankenPHP dengan Octane (worker mode)

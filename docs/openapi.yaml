@@ -1552,6 +1552,128 @@ paths:
                   { schema: { $ref: "#/components/schemas/Envelope" } },
               },
           }
+  /assets/import/template:
+    get:
+      tags: [Assets]
+      operationId: downloadAssetImportTemplate
+      summary: Download template Excel untuk import aset
+      description: |
+        Mengunduh file template `.xlsx` yang sudah berisi header kolom dan dropdown
+        validasi Kategori dari master data. User mengisi template ini lalu mengunggahnya
+        ke endpoint `POST /assets/import`.
+
+        **Kolom template:**
+        | Kolom | Header | Wajib? | Keterangan |
+        |-------|--------|--------|------------|
+        | A | Nama Aset | ✅ | Nama aset |
+        | B | Kategori | ❌ | Dropdown dari master kategori. Mempengaruhi auto-generate kode. |
+        | C | Tahun Pengadaan | ❌ | Format: `YYYY` (contoh: `2026`) |
+        | D | Kode | ❌ | Jika kosong, sistem auto-generate: `[PREFIX_KATEGORI]-[TAHUN]-[XXXX]` |
+        | E | Nomor Seri | ❌ | Nomor seri dari pabrik |
+      responses:
+        "200":
+          description: File template Excel berhasil diunduh
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: Unauthorized
+  /assets/import:
+    post:
+      tags: [Assets]
+      operationId: importAssets
+      summary: Import aset dari file Excel
+      description: |
+        Mengunggah file Excel (`.xlsx` atau `.xls`) yang sudah diisi berdasarkan template
+        dari endpoint `GET /assets/import/template`.
+
+        **Mekanisme:**
+        - Baris yang valid akan langsung disimpan ke database.
+        - Baris yang gagal (validasi error / kode duplikat) akan **dilewati** (*skip*) 
+          dan dilaporkan dalam response — baris lain tetap diproses.
+        - Jika kolom **Kode** dikosongkan, sistem akan men-generate kode otomatis dengan
+          format `[PREFIX_KATEGORI]-[TAHUN]-[XXXX]` (contoh: `KOM-2026-0001`).
+        - Lampiran (foto/dokumen) **tidak dapat diunggah via Excel**. Lampiran ditambahkan
+          secara terpisah melalui halaman detail aset setelah import berhasil.
+
+        **Batasan File:**
+        - Format: `.xlsx`, `.xls`, `.csv`
+        - Ukuran maksimal: 5MB
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: File Excel template yang sudah diisi (.xlsx / .xls / .csv, maks 5MB)
+      responses:
+        "200":
+          description: Proses import selesai (bisa ada baris yang berhasil dan gagal)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          imported_count:
+                            type: integer
+                            description: Jumlah baris yang berhasil di-import
+                            example: 47
+                          failures_count:
+                            type: integer
+                            description: Jumlah baris yang gagal
+                            example: 3
+                          imported_data:
+                            type: array
+                            description: Daftar aset yang berhasil dibuat
+                            items:
+                              type: object
+                              properties:
+                                row:
+                                  type: integer
+                                  description: Nomor baris Excel
+                                  example: 2
+                                nama:
+                                  type: string
+                                  example: "Laptop Dell XPS 15"
+                                kode:
+                                  type: string
+                                  example: "KOM-2026-0001"
+                          failures_data:
+                            type: array
+                            description: Daftar baris yang gagal beserta alasannya
+                            items:
+                              type: object
+                              properties:
+                                row:
+                                  type: integer
+                                  description: Nomor baris Excel yang gagal
+                                  example: 5
+                                errors:
+                                  type: array
+                                  items:
+                                    type: string
+                                  example: ["Kode Aset 'AST-001' sudah dipakai database."]
+        "422":
+          description: File tidak valid (format tidak didukung / melebihi ukuran maksimal)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "401":
+          description: Unauthorized
+        "500":
+          description: Terjadi kesalahan saat memproses file
   /assets:
     get:
       tags: [Assets]
