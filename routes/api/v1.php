@@ -24,12 +24,15 @@ use App\Http\Controllers\API\V1\Report\Category\CreateReportCategoryController;
 use App\Http\Controllers\API\V1\Report\Category\DeleteReportCategoryController;
 use App\Http\Controllers\API\V1\Report\Category\DetailReportCategoryController;
 use App\Http\Controllers\API\V1\Report\Category\IndexReportCategoryController;
+use App\Http\Controllers\API\V1\Asset\CRUD\BulkDeleteAssetController;
 use App\Http\Controllers\API\V1\Asset\CRUD\CreateAssetController;
 use App\Http\Controllers\API\V1\Asset\CRUD\DeleteAssetController;
 use App\Http\Controllers\API\V1\Asset\CRUD\DetailAssetController;
+use App\Http\Controllers\API\V1\Asset\CRUD\ExportAssetController;
 use App\Http\Controllers\API\V1\Asset\CRUD\IndexAssetController;
 use App\Http\Controllers\API\V1\Asset\CRUD\UpdateAssetController;
 use App\Http\Controllers\API\V1\Asset\Loan\ActivateAssetController;
+use App\Http\Controllers\API\V1\Asset\Loan\BulkActivateAssetController;
 use App\Http\Controllers\API\V1\Asset\Loan\DeactivateAssetController;
 use App\Http\Controllers\API\V1\Asset\Maintenance\CompleteAssetMaintenanceController;
 use App\Http\Controllers\API\V1\Asset\Maintenance\StartAssetMaintenanceController;
@@ -162,8 +165,11 @@ Route::prefix('report-categories')->middleware(['auth:api'])->group(function () 
 Route::prefix('assets')->middleware(['auth:api'])->group(function () {
     Route::post('import', ImportAssetController::class);
     Route::get('import/template', ImportAssetTemplateController::class);
+    Route::get('export', ExportAssetController::class);
     Route::get('', IndexAssetController::class);
     Route::post('', CreateAssetController::class);
+    Route::delete('bulk', BulkDeleteAssetController::class);
+    Route::post('bulk-activate', BulkActivateAssetController::class);
     Route::post('handover/print', GenerateAssetHandoverPdfController::class);
     Route::post('label/print', GenerateAssetLabelPdfController::class);
     Route::prefix('{asset}')->group(function () {

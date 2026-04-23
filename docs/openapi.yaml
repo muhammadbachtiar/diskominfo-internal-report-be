@@ -1674,6 +1674,118 @@ paths:
           description: Unauthorized
         "500":
           description: Terjadi kesalahan saat memproses file
+  /assets/export:
+    get:
+      tags: [Assets]
+      operationId: exportAssets
+      summary: Export data aset ke file Excel atau CSV
+      description: |
+        Mengunduh seluruh data aset yang sudah difilter dalam format `.xlsx` atau `.csv`.
+
+        **Filter tersedia:**
+        - `status` — filter berdasarkan status aset
+        - `category_id` — filter berdasarkan kategori aset
+        - `unit_id` — filter berdasarkan unit/bidang
+        - `location_id` — filter berdasarkan lokasi penempatan
+        - `search` — pencarian bebas pada nama, kode, nomor seri, dan kategori
+        - `from` / `to` — rentang **tanggal pengadaan** (`purchased_at`) format `YYYY-MM-DD`
+
+        **Kolom output:**
+        | Kolom | Keterangan |
+        |-------|------------|
+        | Kode Aset | Kode unik aset |
+        | Nama Aset | Nama barang |
+        | Kategori | Nama kategori |
+        | Nomor Seri | Serial number dari pabrik |
+        | Status | Status dalam Bahasa Indonesia |
+        | Harga Perolehan | Format angka (titik ribuan, koma desimal) |
+        | Tanggal Pengadaan | Format `dd/mm/YYYY` |
+        | Lokasi | Nama lokasi penempatan |
+        | Unit | Nama unit/bidang |
+        | Dibuat Pada | Tanggal & jam record dibuat |
+
+        Jika tidak ada parameter `format`, default ke **xlsx**.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: format
+          description: Format file yang akan diunduh
+          schema:
+            type: string
+            enum: [xlsx, csv]
+            default: xlsx
+        - in: query
+          name: status
+          description: Filter berdasarkan status aset
+          schema:
+            type: string
+            enum: [available, borrowed, maintenance, retired, attached, completed]
+        - in: query
+          name: category_id
+          description: Filter berdasarkan ID kategori aset (UUID)
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: unit_id
+          description: Filter berdasarkan ID unit/bidang (UUID)
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: location_id
+          description: Filter berdasarkan ID lokasi penempatan (UUID)
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: search
+          description: Pencarian bebas pada nama aset, kode, nomor seri, dan kategori
+          schema:
+            type: string
+        - in: query
+          name: from
+          description: "Awal rentang tanggal pengadaan (purchased_at). Format: YYYY-MM-DD"
+          schema:
+            type: string
+            format: date
+            example: "2024-01-01"
+        - in: query
+          name: to
+          description: "Akhir rentang tanggal pengadaan (purchased_at). Format: YYYY-MM-DD. Harus >= from."
+          schema:
+            type: string
+            format: date
+            example: "2024-12-31"
+      responses:
+        "200":
+          description: File Excel/CSV berhasil diunduh
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+                description: File .xlsx (default)
+            text/csv:
+              schema:
+                type: string
+                format: binary
+                description: File .csv (jika format=csv)
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — tidak memiliki permission `view-asset`
+        "422":
+          description: Validasi parameter gagal
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "500":
+          description: Terjadi kesalahan saat memproses export
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
   /assets:
     get:
       tags: [Assets]
@@ -1775,7 +1887,14 @@ paths:
     delete:
       tags: [Assets]
       operationId: deleteAsset
-      summary: Delete asset (retired only)
+      summary: Delete single asset
+      description: |
+        Menghapus satu aset. Aset dapat dihapus jika memenuhi salah satu kondisi berikut:
+        - Status **`retired`** (aset telah dipensiunkan), atau
+        - Status **`available`** dan **belum memiliki riwayat transaksi** apapun
+          (tidak pernah dipinjam, tidak pernah masuk maintenance, tidak pernah dilampirkan ke laporan).
+
+        Aset yang memiliki pinjaman aktif (*open loan*) tidak dapat dihapus.
       parameters:
         - in: path
           name: id
@@ -1791,6 +1910,208 @@ paths:
                   { schema: { $ref: "#/components/schemas/Envelope" } },
               },
           }
+        "400":
+          description: Asset tidak memenuhi syarat untuk dihapus
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "404":
+          description: Asset tidak ditemukan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+  /assets/bulk:
+    delete:
+      tags: [Assets]
+      operationId: bulkDeleteAssets
+      summary: Bulk delete assets
+      description: |
+        Menghapus beberapa aset sekaligus berdasarkan daftar ID yang diberikan.
+
+        **Aturan penghapusan (sama dengan single delete):**
+        - Status **`retired`** (aset telah dipensiunkan), **atau**
+        - Status **`available`** dan **belum memiliki riwayat transaksi** apapun
+          (tidak pernah dipinjam, tidak pernah masuk maintenance, tidak pernah dilampirkan ke laporan).
+
+        **Mekanisme validasi:**
+        - Seluruh aset dalam daftar divalidasi terlebih dahulu sebelum ada yang dihapus.
+        - Jika **salah satu** aset gagal validasi, seluruh operasi dibatalkan — tidak ada aset yang terhapus.
+        - Aset yang memiliki pinjaman aktif (*open loan*) tidak dapat dihapus.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  minItems: 1
+                  description: Daftar UUID aset yang akan dihapus
+                  items:
+                    type: string
+                    format: uuid
+                    example: "018f1a2b-3c4d-7e8f-9a0b-1c2d3e4f5a6b"
+      responses:
+        "200":
+          description: Semua aset berhasil dihapus
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          deleted_count:
+                            type: integer
+                            description: Jumlah aset yang berhasil dihapus
+                            example: 5
+                          deleted_ids:
+                            type: array
+                            description: Daftar UUID aset yang telah dihapus
+                            items:
+                              type: string
+                              format: uuid
+        "400":
+          description: Satu atau lebih aset tidak memenuhi syarat untuk dihapus
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "404":
+          description: Satu atau lebih aset tidak ditemukan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "422":
+          description: Validasi input gagal (misal ids kosong atau format UUID salah)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+  /assets/bulk-activate:
+    post:
+      tags: [Assets]
+      operationId: bulkActivateAssets
+      summary: Bulk activate (borrow) multiple assets
+      description: |
+        Mengaktifkan / meminjamkan beberapa aset sekaligus ke satu lokasi dan satu peminjam.
+
+        **Pola "Global Default & Local Override":**
+        - `global_pic` dan `global_note` bersifat **default** — berlaku untuk semua aset yang tidak
+          mendefinisikan `pic`/`note` sendiri di dalam objek `assets[]`.
+        - Jika sebuah item dalam array `assets[]` menyertakan `pic` atau `note`, nilai tersebut
+          akan **menimpa (override)** nilai global hanya untuk aset tersebut.
+        - `location_id` dan `borrower_id` bersifat **wajib dan seragam** untuk seluruh aset.
+
+        **Contoh skenario:**
+        ```json
+        {
+          "location_id": "uuid-ruang-server",
+          "borrower_id": 5,
+          "global_pic": "Anton",
+          "global_note": "Aktivasi batch komputer",
+          "assets": [
+            { "asset_id": "uuid-pc-01" },
+            { "asset_id": "uuid-pc-02", "note": "VGA bermasalah", "pic": "Joko" },
+            { "asset_id": "uuid-pc-03" }
+          ]
+        }
+        ```
+        Hasil: PC-01 dan PC-03 menggunakan PIC "Anton" & note "Aktivasi batch komputer".
+        PC-02 menggunakan PIC "Joko" & note "VGA bermasalah".
+
+        **Mekanisme validasi (fail-fast):**
+        - Seluruh aset divalidasi keberadaan dan statusnya terlebih dahulu.
+        - Jika **salah satu** aset sudah aktif (sedang dipinjam), seluruh operasi dibatalkan.
+        - Notifikasi dikirim **sekali** sebagai ringkasan setelah semua aset berhasil diproses
+          (bukan per-aset, untuk menghindari spam notifikasi).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [location_id, borrower_id, assets]
+              properties:
+                location_id:
+                  type: string
+                  format: uuid
+                  description: ID lokasi tujuan penempatan aset (wajib, berlaku untuk semua aset)
+                  example: "018f-uuid-lokasi"
+                borrower_id:
+                  type: integer
+                  description: ID user peminjam (wajib, berlaku untuk semua aset)
+                  example: 5
+                global_pic:
+                  type: string
+                  nullable: true
+                  description: Nama PIC default — dipakai oleh aset yang tidak mendefinisikan pic sendiri
+                  example: "Anton"
+                global_note:
+                  type: string
+                  nullable: true
+                  description: Catatan default — dipakai oleh aset yang tidak mendefinisikan note sendiri
+                  example: "Aktivasi batch komputer divisi IT"
+                assets:
+                  type: array
+                  minItems: 1
+                  description: Daftar aset yang akan diaktifkan
+                  items:
+                    type: object
+                    required: [asset_id]
+                    properties:
+                      asset_id:
+                        type: string
+                        format: uuid
+                        description: UUID aset yang akan diaktifkan
+                        example: "018f1a2b-3c4d-7e8f-9a0b-1c2d3e4f5a6b"
+                      pic:
+                        type: string
+                        nullable: true
+                        description: Override PIC khusus untuk aset ini (menimpa global_pic)
+                        example: "Joko"
+                      note:
+                        type: string
+                        nullable: true
+                        description: Override catatan khusus untuk aset ini (menimpa global_note)
+                        example: "VGA bermasalah, titip Joko"
+      responses:
+        "200":
+          description: Semua aset berhasil diaktifkan
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          activated_count:
+                            type: integer
+                            description: Jumlah aset yang berhasil diaktifkan
+                            example: 3
+        "400":
+          description: Satu atau lebih aset sudah memiliki pinjaman aktif
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "404":
+          description: Satu atau lebih aset atau lokasi tidak ditemukan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "422":
+          description: Validasi input gagal
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
   /assets/{id}/activate:
     post:
       tags: [Assets]
