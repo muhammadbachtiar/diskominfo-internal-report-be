@@ -40,7 +40,7 @@ class AssetExport implements FromQuery, WithHeadings, WithMapping
     {
         $statusLabel = match ($asset->status) {
             'available'   => 'Tersedia',
-            'borrowed'    => 'Dipinjam',
+            'borrowed'    => 'Aktif',
             'maintenance' => 'Perawatan',
             'retired'     => 'Pensiun',
             'attached'    => 'Terlampir',
@@ -48,10 +48,15 @@ class AssetExport implements FromQuery, WithHeadings, WithMapping
             default       => $asset->status,
         };
 
+        // Pastikan berstatus Aktif jika punya pinjaman aktif (walau status aslinya belum berubah sempurna)
+        if ($asset->currentLoan) {
+            $statusLabel = 'Aktif';
+        }
+
         return [
             $asset->code,
             $asset->name,
-            $asset->category ? $asset->category->name : ($asset->category ?? '-'),
+            optional($asset->category)->name ?? ($asset->category ?? '-'),
             $asset->serial_number ?? '-',
             $statusLabel,
             $asset->purchase_price !== null ? number_format((float) $asset->purchase_price, 2, ',', '.') : '-',

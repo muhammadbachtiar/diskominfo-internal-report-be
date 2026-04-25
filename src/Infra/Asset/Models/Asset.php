@@ -11,6 +11,7 @@ use Infra\Report\Models\Report;
 use Infra\Shared\Concerns\HasUuidV7;
 use Infra\Shared\Models\BaseModel;
 use Infra\Shared\Models\Unit;
+use Infra\Asset\Models\Location;
 
 class Asset extends BaseModel
 {
@@ -25,6 +26,11 @@ class Asset extends BaseModel
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class, 'unit_id');
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class, 'location_id');
     }
 
     public function loans(): HasMany

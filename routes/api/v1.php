@@ -33,6 +33,7 @@ use App\Http\Controllers\API\V1\Asset\CRUD\IndexAssetController;
 use App\Http\Controllers\API\V1\Asset\CRUD\UpdateAssetController;
 use App\Http\Controllers\API\V1\Asset\Loan\ActivateAssetController;
 use App\Http\Controllers\API\V1\Asset\Loan\BulkActivateAssetController;
+use App\Http\Controllers\API\V1\Asset\Loan\BulkDeactivateAssetController;
 use App\Http\Controllers\API\V1\Asset\Loan\DeactivateAssetController;
 use App\Http\Controllers\API\V1\Asset\Maintenance\CompleteAssetMaintenanceController;
 use App\Http\Controllers\API\V1\Asset\Maintenance\StartAssetMaintenanceController;
@@ -170,6 +171,7 @@ Route::prefix('assets')->middleware(['auth:api'])->group(function () {
     Route::post('', CreateAssetController::class);
     Route::delete('bulk', BulkDeleteAssetController::class);
     Route::post('bulk-activate', BulkActivateAssetController::class);
+    Route::post('bulk-deactivate', BulkDeactivateAssetController::class);
     Route::post('handover/print', GenerateAssetHandoverPdfController::class);
     Route::post('label/print', GenerateAssetLabelPdfController::class);
     Route::prefix('{asset}')->group(function () {

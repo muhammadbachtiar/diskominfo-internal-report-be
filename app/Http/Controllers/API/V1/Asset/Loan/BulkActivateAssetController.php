@@ -21,7 +21,7 @@ class BulkActivateAssetController extends BaseController
             $data = $request->validate([
                 // ── Shared fields (applied to all assets) ──────────────────
                 'location_id'             => ['required', 'uuid', 'exists:locations,id'],
-                'borrower_id'             => ['required', 'integer'],
+                'borrower_id'             => ['nullable', 'integer'],
 
                 // ── Global defaults (optional, overridable per asset) ───────
                 'global_pic'              => ['nullable', 'string', 'max:255'],

@@ -25,14 +25,13 @@ class ExportAssetController extends BaseController
                 'status'          => ['nullable', 'string', 'in:available,borrowed,maintenance,retired,attached,completed'],
                 'category_id'     => ['nullable', 'string', 'exists:asset_categories,id'],
                 'unit_id'         => ['nullable', 'string', 'exists:units,id'],
-                'location_id'     => ['nullable', 'string', 'exists:asset_locations,id'],
                 'search'          => ['nullable', 'string', 'max:255'],
                 'from'            => ['nullable', 'date'],
                 'to'              => ['nullable', 'date', 'after_or_equal:from'],
             ]);
 
             // ── Build query (same filters as IndexAssetAction) ─────────────────
-            $query = Asset::with(['category', 'unit', 'location']);
+            $query = Asset::with(['category', 'unit', 'location', 'currentLoan']);
 
             if ($status = $request->query('status')) {
                 $query->where('status', $status);
@@ -46,9 +45,6 @@ class ExportAssetController extends BaseController
                 $query->where('unit_id', $unitId);
             }
 
-            if ($locationId = $request->query('location_id')) {
-                $query->where('location_id', $locationId);
-            }
 
             // Date range filter — berdasarkan purchased_at
             if ($from = $request->query('from')) {

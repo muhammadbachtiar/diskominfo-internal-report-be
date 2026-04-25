@@ -61,10 +61,11 @@ class BulkActivateAssetService extends Action
     public function execute(array $payload): array
     {
         $locationId   = $payload['location_id'];
-        $borrowerId   = (int) $payload['borrower_id'];
+        $borrowerId   = isset($payload['borrower_id']) ? (int) $payload['borrower_id'] : (int) auth()->id();
         $globalPic    = $payload['global_pic'] ?? null;
         $globalNote   = $payload['global_note'] ?? null;
         $assetItems   = $payload['assets'];
+        $changedBy    = (int) auth()->id(); // Always auth user — satisfies FK constraint
 
         // ── 1. Load shared location once ─────────────────────────────────────
         $location = Location::find($locationId);
@@ -94,7 +95,7 @@ class BulkActivateAssetService extends Action
         // ── 3. Process all assets inside a single transaction ─────────────────
         $activatedLoans = DB::transaction(function () use (
             $assetItems, $locationId, $borrowerId,
-            $globalPic, $globalNote, $location
+            $globalPic, $globalNote, $location, $changedBy
         ) {
             $loans = [];
 
@@ -145,7 +146,7 @@ class BulkActivateAssetService extends Action
                     assetId: $assetId,
                     status: AssetStatus::Borrowed,
                     changedAt: CarbonImmutable::now(),
-                    changedBy: auth()->id(),
+                    changedBy: $changedBy, // Always auth user — satisfies FK constraint
                     note: $historyNote,
                 ));
 

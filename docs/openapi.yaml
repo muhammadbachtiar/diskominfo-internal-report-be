@@ -3696,6 +3696,92 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Envelope"
+  /assets/bulk-deactivate:
+    post:
+      tags: [Assets]
+      operationId: bulkDeactivateAssets
+      summary: Bulk deactivate (return) multiple assets
+      description: >
+        Returns multiple borrowed assets at once using the "Global Default & Local Override" pattern.
+        A `global_note` applies to all assets unless a per-asset `note` is provided.
+        All assets are validated before any write — if any asset has no active loan, the entire
+        request fails immediately (fail-fast, all-or-nothing).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assets]
+              properties:
+                actor_id:
+                  type: integer
+                  nullable: true
+                  description: ID of the user performing the return (defaults to authenticated user)
+                global_note:
+                  type: string
+                  nullable: true
+                  description: Default return note applied to all assets unless overridden per-asset
+                assets:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [asset_id]
+                    properties:
+                      asset_id:
+                        type: string
+                        description: UUID of the asset to deactivate
+                      note:
+                        type: string
+                        nullable: true
+                        description: Overrides global_note for this specific asset
+            example:
+              actor_id: 12
+              global_note: "Dikembalikan setelah kegiatan selesai"
+              assets:
+                - asset_id: "018f1234-abcd-7000-0000-000000000001"
+                - asset_id: "018f1234-abcd-7000-0000-000000000002"
+                  note: "Dikembalikan lebih awal, kondisi baik"
+      responses:
+        "200":
+          description: Assets deactivated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          deactivated_count:
+                            type: integer
+                            description: Number of assets that were successfully returned
+              example:
+                success: true
+                message: Assets deactivated successfully
+                code: 200
+                data:
+                  deactivated_count: 2
+        "400":
+          description: One or more assets have no active loan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "404":
+          description: One or more assets not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
   /health:
     get:
       tags: [System]
