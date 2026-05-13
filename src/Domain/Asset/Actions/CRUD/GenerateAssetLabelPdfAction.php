@@ -1,6 +1,6 @@
 <?php
 
-namespace Domain\Asset\Actions;
+namespace Domain\Asset\Actions\CRUD;
 
 use Dompdf\Dompdf;
 use Domain\Shared\Actions\CheckRolesAction;
@@ -22,7 +22,7 @@ class GenerateAssetLabelPdfAction extends Action
             ->get();
 
         if ($assets->isEmpty()) {
-            throw new InvalidArgumentException("No assets found for the provided IDs");
+            throw new InvalidArgumentException('No assets found for the provided IDs');
         }
 
         // Fetch categories separately
@@ -35,8 +35,8 @@ class GenerateAssetLabelPdfAction extends Action
         // Prepare data for view
         $assetData = $assets->map(function ($asset) use ($categories) {
             $categoryId = $asset->category_id;
-            $categoryName = $categoryId && isset($categories[$categoryId]) 
-                ? $categories[$categoryId]->name 
+            $categoryName = $categoryId && isset($categories[$categoryId])
+                ? $categories[$categoryId]->name
                 : 'PERANGKAT LUNAK/KERAS';
 
             return [
@@ -57,7 +57,6 @@ class GenerateAssetLabelPdfAction extends Action
         $dompdf = new Dompdf(['isRemoteEnabled' => true]);
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
-        
         $dompdf->render();
         $output = $dompdf->output();
 

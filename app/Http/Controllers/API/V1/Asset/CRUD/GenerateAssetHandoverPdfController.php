@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\API\V1\Asset;
+namespace App\Http\Controllers\API\V1\Asset\CRUD;
 
-use Domain\Asset\Actions\GenerateAssetHandoverPdfAction;
+use Domain\Asset\Actions\CRUD\GenerateAssetHandoverPdfAction;
 use Illuminate\Http\Request;
 use Infra\Shared\Controllers\BaseController;
 use Infra\Shared\Enums\HttpStatus;

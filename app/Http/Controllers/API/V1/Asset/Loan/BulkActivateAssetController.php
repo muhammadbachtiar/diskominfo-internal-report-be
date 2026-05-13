@@ -40,6 +40,7 @@ class BulkActivateAssetController extends BaseController
                 'Assets activated successfully',
                 [
                     'activated_count' => $result['activated_count'],
+                    'loans'           => $result['loans'],
                 ]
             );
         } catch (ValidationException $e) {

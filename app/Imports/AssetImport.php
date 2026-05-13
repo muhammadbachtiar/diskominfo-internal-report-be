@@ -18,6 +18,9 @@ class AssetImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
     public function collection(Collection $rows)
     {
         $categories = AssetCategory::all()->keyBy('name');
+        
+        $seenCodes = [];
+        $seenSerials = [];
 
         foreach ($rows as $index => $row) {
             $rowNumber = $index + 2;
@@ -57,11 +60,19 @@ class AssetImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                 $counter = 1;
                 $kode = $codePrefix . str_pad($counter, 4, '0', STR_PAD_LEFT);
 
-                while (Asset::withTrashed()->where('code', $kode)->exists()) {
+                while (Asset::withTrashed()->where('code', $kode)->exists() || in_array($kode, $seenCodes)) {
                     $counter++;
                     $kode = $codePrefix . str_pad($counter, 4, '0', STR_PAD_LEFT);
                 }
+                $seenCodes[] = $kode;
             } else {
+                if (in_array($kode, $seenCodes)) {
+                    $this->failures[] = [
+                        'row' => $rowNumber,
+                        'errors' => ['Kode Aset "' . $kode . '" duplikat di dalam file Excel.']
+                    ];
+                    continue; 
+                }
                 if (Asset::withTrashed()->where('code', $kode)->exists()) {
                    $this->failures[] = [
                         'row' => $rowNumber,
@@ -69,9 +80,17 @@ class AssetImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                     ];
                     continue; 
                 }
+                $seenCodes[] = $kode;
             }
 
             if (! empty($nomorSeri)) {
+                if (in_array($nomorSeri, $seenSerials)) {
+                    $this->failures[] = [
+                        'row' => $rowNumber,
+                        'errors' => ['Nomor seri "' . $nomorSeri . '" duplikat di dalam file Excel.']
+                    ];
+                    continue;
+                }
                 if (Asset::withTrashed()->where('serial_number', $nomorSeri)->exists()) {
                     $this->failures[] = [
                         'row' => $rowNumber,
@@ -79,6 +98,7 @@ class AssetImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                     ];
                     continue;
                 }
+                $seenSerials[] = $nomorSeri;
             }
 
             $purchasedAt = null;
@@ -87,7 +107,7 @@ class AssetImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
             }
 
             try {
-                CreateAssetAction::resolve()->execute([
+                $created = CreateAssetAction::resolve()->execute([
                     'name' => $namaAset,
                     'code' => $kode,
                     'category' => $categoryNameForDB,
@@ -97,9 +117,10 @@ class AssetImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                 ]);
 
                 $this->importedRows[] = [
-                    'row' => $rowNumber,
+                    'id'   => $created->id,
+                    'row'  => $rowNumber,
                     'nama' => $namaAset,
-                    'kode' => $kode
+                    'kode' => $kode,
                 ];
             } catch (\Exception $e) {
                 $this->failures[] = [

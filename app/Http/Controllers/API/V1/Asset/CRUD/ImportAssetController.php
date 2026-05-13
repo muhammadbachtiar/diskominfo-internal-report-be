@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API\V1\Asset;
+namespace App\Http\Controllers\API\V1\Asset\CRUD;
 
 use App\Imports\AssetImport;
 use Illuminate\Http\Request;

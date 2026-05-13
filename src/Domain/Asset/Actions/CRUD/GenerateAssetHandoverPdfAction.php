@@ -1,6 +1,6 @@
 <?php
 
-namespace Domain\Asset\Actions;
+namespace Domain\Asset\Actions\CRUD;
 
 use Carbon\CarbonImmutable;
 use Dompdf\Dompdf;
@@ -54,7 +54,7 @@ class GenerateAssetHandoverPdfAction extends Action
 
         // Parse date
         $date = CarbonImmutable::parse($payload['date']);
-        
+
         // Format nomor
         $nomor = 'Nomor : _______ /DISKOMINFO SP-I/' . $date->year;
 
@@ -76,11 +76,11 @@ class GenerateAssetHandoverPdfAction extends Action
         $assets = collect();
         foreach ($assetIds as $assetId) {
             $asset = Asset::query()->find($assetId);
-            
-            if (!$asset) {
+
+            if (! $asset) {
                 throw new InvalidArgumentException("Asset with ID {$assetId} not found");
             }
-            
+
             $assets->push($asset);
         }
 
@@ -99,7 +99,7 @@ class GenerateAssetHandoverPdfAction extends Action
                 ? $categories[$categoryId]->name
                 : 'Tanpa Kategori';
 
-            if (!isset($grouped[$categoryId])) {
+            if (! isset($grouped[$categoryId])) {
                 $grouped[$categoryId] = [
                     'category_name' => $categoryName,
                     'count' => 0,
@@ -146,8 +146,8 @@ class GenerateAssetHandoverPdfAction extends Action
 
     private function convertYearToWords(int $year): string
     {
-        $thousands = (int)floor($year / 1000);
-        $hundreds = (int)floor(($year % 1000) / 100);
+        $thousands = (int) floor($year / 1000);
+        $hundreds = (int) floor(($year % 1000) / 100);
         $tens = $year % 100;
 
         $result = [];
@@ -173,7 +173,7 @@ class GenerateAssetHandoverPdfAction extends Action
             return $this->numberWords[$number] ?? '';
         }
 
-        $tens = (int)floor($number / 10);
+        $tens = (int) floor($number / 10);
         $ones = $number % 10;
 
         $tensWords = [
