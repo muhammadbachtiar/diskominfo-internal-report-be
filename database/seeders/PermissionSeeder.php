@@ -102,6 +102,9 @@ class PermissionSeeder extends Seeder
             ['function' => 'add-classification', 'apps' => 'classifications'],
             ['function' => 'edit-classification', 'apps' => 'classifications'],
             ['function' => 'delete-classification', 'apps' => 'classifications'],
+
+            // Dashboard service
+            ['function' => 'view-dashboard', 'apps' => 'dashboard'],
         ];
 
         // Upsert by function, update apps to reflect microservice name

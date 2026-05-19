@@ -89,6 +89,8 @@ use App\Http\Controllers\API\V1\Unit\CRUD\UpdateUnitController;
 use App\Http\Controllers\API\V1\Unit\CRUD\DeleteUnitController;
 use App\Http\Controllers\API\V1\LetterController;
 use App\Http\Controllers\API\V1\ClassificationController;
+use App\Http\Controllers\API\V1\Dashboard\DashboardSummaryController;
+use App\Http\Controllers\API\V1\Dashboard\DashboardRecentActivitiesController;
 
 Route::post(uri: 'login', action: LoginController::class);
 
@@ -108,6 +110,11 @@ Route::prefix('user')->middleware(['auth:api'])->group(function () {
         Route::patch(uri: '', action: UpdateUserController::class);
         Route::delete(uri: '', action: DeleteUserController::class);
     });
+});
+
+Route::prefix('dashboard')->middleware(['auth:api'])->group(function () {
+    Route::get('summary', DashboardSummaryController::class);
+    Route::get('recent-activities', DashboardRecentActivitiesController::class);
 });
 
 Route::prefix('roles')->middleware(['auth:api'])->group(function () {

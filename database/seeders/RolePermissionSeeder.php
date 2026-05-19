@@ -36,7 +36,8 @@ class RolePermissionSeeder extends Seeder
             'view-location','add-location','edit-location','delete-location',
             'view-report-category','add-report-category','edit-report-category','delete-report-category',
             'view-letter','add-incoming-letter','add-outgoing-letter','edit-letter','delete-letter','analyze-letter',
-            'view-classification','add-classification','edit-classification','delete-classification']);
+            'view-classification','add-classification','edit-classification','delete-classification',
+            'view-dashboard']);
 
         // kabid: unit-level rights and approvals + minimal users/storage
         $assign($roleKabid, [
@@ -49,7 +50,8 @@ class RolePermissionSeeder extends Seeder
             'view-location','add-location','edit-location','delete-location',
             'view-report-category','add-report-category','edit-report-category','delete-report-category',
             'view-letter','add-incoming-letter','add-outgoing-letter','edit-letter','delete-letter','analyze-letter',
-            'view-classification','add-classification','edit-classification','delete-classification'
+            'view-classification','add-classification','edit-classification','delete-classification',
+            'view-dashboard'
         ]);
 
         // pegawai: create/update own, manage evidence + storage + edit own profile
@@ -62,7 +64,8 @@ class RolePermissionSeeder extends Seeder
             'view-location','add-location','edit-location','delete-location',
             'view-report-category','add-report-category','edit-report-category','delete-report-category',
             'view-letter','add-incoming-letter','add-outgoing-letter','edit-letter','delete-letter','analyze-letter',
-            'view-classification','add-classification','edit-classification','delete-classification'
+            'view-classification','add-classification','edit-classification','delete-classification',
+            'view-dashboard'
         ]);
     }
 }

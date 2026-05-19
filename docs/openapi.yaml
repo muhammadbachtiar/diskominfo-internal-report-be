@@ -641,6 +641,105 @@ components:
 security:
   - bearerAuth: []
 paths:
+  /dashboard/summary:
+    get:
+      tags: [Dashboard]
+      operationId: getDashboardSummary
+      summary: Get dashboard summary statistics
+      responses:
+        '200':
+          description: Dashboard summary successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  message: { type: string, example: "Dashboard summary retrieved" }
+                  code: { type: integer, example: 200 }
+                  data:
+                    type: object
+                    properties:
+                      assets:
+                        type: object
+                        properties:
+                          total: { type: integer }
+                          available: { type: integer }
+                          borrowed: { type: integer }
+                          maintenance: { type: integer }
+                          retired: { type: integer }
+                          by_status: { type: object }
+                      reports:
+                        type: object
+                        properties:
+                          total_this_year: { type: integer }
+                          my_pending_count: { type: integer }
+                          by_status: { type: object }
+                      letters:
+                        type: object
+                        properties:
+                          total_this_year: { type: integer }
+                          total_this_month: { type: integer }
+                          by_type: { type: object }
+                      monthly_trend:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            month: { type: integer }
+                            label: { type: string }
+                            reports: { type: integer }
+                            letters: { type: integer }
+
+  /dashboard/recent-activities:
+    get:
+      tags: [Dashboard]
+      operationId: getDashboardRecentActivities
+      summary: Get recent activities (reports, loans, letters)
+      responses:
+        '200':
+          description: Recent activities retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  message: { type: string, example: "Recent activities retrieved" }
+                  code: { type: integer, example: 200 }
+                  data:
+                    type: object
+                    properties:
+                      recent_reports:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: string }
+                            title: { type: string }
+                            status: { type: string }
+                            category: { type: string }
+                            created_by: { type: string }
+                            updated_at: { type: string }
+                      recent_loans:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: string }
+                            asset_name: { type: string }
+                            borrower: { type: string }
+                            borrowed_at: { type: string }
+                      recent_letters:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: integer }
+                            type: { type: string }
+                            subject: { type: string }
+                            sender_receiver: { type: string }
+
   /reports:
     get:
       tags: [Reports]
