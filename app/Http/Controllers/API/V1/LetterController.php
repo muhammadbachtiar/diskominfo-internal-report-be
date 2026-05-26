@@ -232,7 +232,38 @@ class LetterController extends BaseController
                 'unit_id' => 'nullable|exists:units,id',
                 'description' => 'nullable|string',
                 'metadata_ai' => 'nullable|array',
+                'file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:20480', // 20MB
             ]);
+
+            $file = $request->file('file');
+            if ($file) {
+                // 1. Upload Main File
+                $uuid = (string) \Illuminate\Support\Str::uuid();
+                $directory = "letters/{$uuid}";
+                
+                $diskName = config('filesystems.disks.s3.bucket') ? 's3' : 'public';
+                $disk = \Illuminate\Support\Facades\Storage::disk($diskName);
+                
+                $path = $disk->putFileAs($directory, $file, $uuid . '.' . $file->getClientOriginalExtension());
+                $fileUrl = $disk->url($path);
+                
+                $data['file_url'] = $fileUrl;
+
+                // 2. Generate and Upload Thumbnail
+                $thumbnailUrl = null;
+                try {
+                    $thumbnailContent = $this->generateThumbnail($file);
+                    if ($thumbnailContent) {
+                        $thumbName = $uuid . '_thumb.jpg';
+                        $thumbPath = $directory . '/' . $thumbName;
+                        $disk->put($thumbPath, $thumbnailContent);
+                        $thumbnailUrl = $disk->url($thumbPath);
+                    }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning("Thumbnail generation failed for letter {$uuid} during update: " . $e->getMessage());
+                }
+                $data['thumbnail_url'] = $thumbnailUrl;
+            }
 
             $letter->update($data);
             
@@ -242,6 +273,41 @@ class LetterController extends BaseController
         } catch (\Throwable $th) {
             return $this->resolveForFailedResponseWith($th->getMessage());
         }
+    }
+
+    private function generateThumbnail($file)
+    {
+        $mime = $file->getMimeType();
+        $tempPath = $file->getPathname();
+        
+        // If Image
+        if (str_starts_with($mime, 'image/')) {
+            $manager = \Intervention\Image\ImageManager::imagick(); 
+            return $manager->read($tempPath)->scale(width: 300)->toJpeg()->toString();
+        }
+
+        // If PDF
+        if ($mime === 'application/pdf') {
+            if (class_exists(\Spatie\PdfToImage\Pdf::class)) {
+                try {
+                    $pdf = new \Spatie\PdfToImage\Pdf($tempPath);
+                    $tempOutput = tempnam(sys_get_temp_dir(), 'thumb_') . '.jpg';
+                    $pdf->setPage(1)->saveImage($tempOutput);
+                    
+                    if (file_exists($tempOutput)) {
+                        $content = file_get_contents($tempOutput);
+                        unlink($tempOutput);
+                        
+                        $manager = \Intervention\Image\ImageManager::imagick();
+                        return $manager->read($content)->scale(width: 300)->toJpeg()->toString();
+                    }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("PDF thumbnail generation error during update: " . $e->getMessage());
+                }
+            }
+        }
+
+        return null;
     }
 
     public function destroy($id)

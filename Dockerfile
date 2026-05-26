@@ -1,5 +1,5 @@
 # Use specific version of FrankenPHP
-FROM dunglas/frankenphp:1.1-php8.3
+FROM dunglas/frankenphp:1.2-php8.3
 
 # Set domain for Caddy
 ENV SERVER_NAME="localhost"
@@ -21,12 +21,16 @@ RUN apt-get update && apt-get install -y \
     imagick \
     && rm -rf /var/lib/apt/lists/*
 
+# Fix ImageMagick security policy - allow PDF reading (blocked by default on Debian/Ubuntu)
+# Without this, Spatie\PdfToImage and Imagick will silently fail when converting PDF to image
+RUN find /etc/ImageMagick* -name "policy.xml" -exec sed -i \
+    's|<policy domain="coder" rights="none" pattern="PDF" />|<policy domain="coder" rights="read\|write" pattern="PDF" />|g' {} \;
+
 # Install Composer directly
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
     php composer-setup.php --install-dir=/usr/bin --filename=composer && \
     php -r "unlink('composer-setup.php');" && \
-    chmod +x /usr/bin/composer
-RUN chmod +x /usr/bin/composer && \
+    chmod +x /usr/bin/composer && \
     composer --version
 
 # Install Node.js v18
