@@ -6,17 +6,8 @@ services:
     container_name: internal_reporting_api
     ports:
       - "8092:8000"
-    environment:
-      APP_ENV: ${APP_ENV}
-      APP_DEBUG: true
-      APP_URL: ${APP_URL}
-      DB_CONNECTION: ${DB_CONNECTION}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_DATABASE: ${DB_DATABASE}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      APP_KEY: ${APP_KEY}
+    env_file:
+      - .env
     volumes:
       - ./storage:/app/storage
     # volumes:
@@ -46,21 +37,16 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: internal_reporting_queue
-    environment:
-      DB_CONNECTION: pgsql
-      DB_HOST: ${DB_HOST}
-      DB_PORT: 5432
-      DB_DATABASE: ${DB_DATABASE}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
+    env_file:
+      - .env
     volumes:
       - ./storage:/app/storage
     working_dir: /app
     command: >
       sh -c "php artisan queue:work --tries=3 --sleep=3"
-    depends_on:
-      postgres:
-        condition: service_healthy
+    # depends_on:
+    #   postgres:
+    #     condition: service_healthy
     restart: unless-stopped
 
   postgres:
