@@ -47,14 +47,8 @@ RUN rm -f .htaccess && rm -f info.php
 # Install dependencies dan build asset (jika pakai Vite)
 RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 #RUN npm install && npm run build
-RUN php artisan config:cache
-RUN php artisan route:cache
-RUN php artisan view:cache
-RUN php artisan key:generate
-RUN php artisan passport:keys --force
-RUN php artisan optimize:clear
-# RUN php artisan migrate --force
-# RUN  php artisan passport:install
+# Set directory permissions
+RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache
 
 
 
