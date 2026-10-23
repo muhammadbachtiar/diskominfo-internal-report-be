@@ -1,5 +1,5 @@
 # Use specific version of FrankenPHP
-FROM dunglas/frankenphp:1.2-php8.3
+FROM dunglas/frankenphp:1-php8.3
 
 # Set domain for Caddy
 ENV SERVER_NAME="localhost"
