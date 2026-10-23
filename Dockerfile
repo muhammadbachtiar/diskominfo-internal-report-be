@@ -1,4 +1,4 @@
-# Use specific version of FrankenPHP
+﻿# Use specific version of FrankenPHP
 FROM dunglas/frankenphp:1-php8.3
 
 # Set domain for Caddy
@@ -26,12 +26,8 @@ RUN apt-get update && apt-get install -y \
 RUN find /etc/ImageMagick* -name "policy.xml" -exec sed -i \
     's|<policy domain="coder" rights="none" pattern="PDF" />|<policy domain="coder" rights="read\|write" pattern="PDF" />|g' {} \;
 
-# Install Composer directly
-RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
-    php composer-setup.php --install-dir=/usr/bin --filename=composer && \
-    php -r "unlink('composer-setup.php');" && \
-    chmod +x /usr/bin/composer && \
-    composer --version
+# Install Composer directly from official image
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Install Node.js v18
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
@@ -49,8 +45,6 @@ RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 #RUN npm install && npm run build
 # Set directory permissions
 RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache
-
-
 
 # Aktifkan PHP production config
 COPY ./php.ini $PHP_INI_DIR/php.ini
